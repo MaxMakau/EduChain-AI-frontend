@@ -1,0 +1,80 @@
+/* Global Styles for EduChain AI App */
+@import "tailwindcss";
+
+:root {
+  --color-primary: #1E90FF; /* Dodger Blue */
+  --color-secondary: #3CB371; /* Medium Sea Green */
+  --color-text: #333;
+  --color-background: #f8f8f8;
+  --color-white: #fff;
+  --color-danger: #e74c3c;
+  --border-radius: 8px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  min-height: 100vh;
+}
+
+.card {
+  background-color: var(--color-white);
+  padding: 30px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 400px;
+  margin: 50px auto;
+}
+
+.button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+  width: 100%;
+  margin-top: 15px;
+}
+
+.button.primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.button.primary:hover {
+  background-color: #1c7ed6;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.input-group input, .input-group select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius);
+  box-sizing: border-box;
+}
+
+.error-message {
+  color: var(--color-danger);
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.app-container {
+  padding: 20px;
+}
