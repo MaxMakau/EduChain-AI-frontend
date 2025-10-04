@@ -9,6 +9,9 @@ import ProfessionalDevelopmentLog from '../components/ProfessionalDevelopmentLog
 import SchoolOverview from '../components/SchoolOverview';
 import StudentList from '../components/StudentList';
 import StudentForm from '../components/StudentForm';
+import StudentDetail from '../components/StudentDetail';
+import AttendanceForm from '../components/AttendanceForm';
+import BatchAssessmentForm from '../components/BatchAssessmentForm';
 
 const TeacherDashboard = () => {
   const { user, logout } = useAuth();
@@ -18,6 +21,7 @@ const TeacherDashboard = () => {
   const [tab, setTab] = useState('overview');
   const [studentId, setStudentId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,17 +79,21 @@ const TeacherDashboard = () => {
 
       <div style={tabStyle}>
         <button style={tabButtonStyle(tab === 'overview')} onClick={() => setTab('overview')}>Overview</button>
+        <button style={tabButtonStyle(tab === 'students')} onClick={() => setTab('students')}>Students</button>
+        <button style={tabButtonStyle(tab === 'attendance')} onClick={() => setTab('attendance')}>Attendance</button>
+        <button style={tabButtonStyle(tab === 'assessments')} onClick={() => setTab('assessments')}>Assessments</button>
         <button style={tabButtonStyle(tab === 'timetable')} onClick={() => setTab('timetable')}>Timetable</button>
         <button style={tabButtonStyle(tab === 'leave')} onClick={() => setTab('leave')}>Leave Request</button>
         <button style={tabButtonStyle(tab === 'resource')} onClick={() => setTab('resource')}>Resource Request</button>
         <button style={tabButtonStyle(tab === 'pdlog')} onClick={() => setTab('pdlog')}>Professional Development</button>
-        <button style={tabButtonStyle(tab === 'students')} onClick={() => setTab('students')}>Students</button>
       </div>
 
       {tab === 'overview' && (
         <SchoolOverview overview={data} />
       )}
 
+      {tab === 'attendance' && <AttendanceForm />}
+      {tab === 'assessments' && <BatchAssessmentForm />}
       {tab === 'timetable' && <TimetableForm />}
       {tab === 'leave' && <LeaveRequestForm />}
       {tab === 'resource' && <ResourceRequestForm />}
@@ -93,14 +101,41 @@ const TeacherDashboard = () => {
       
       {tab === 'students' && (
         <div>
-          {!showForm && (
+          {!showForm && !showDetail && (
             <>
               <button className="button primary" onClick={() => { setStudentId(null); setShowForm(true); }}>Add Student</button>
-              <StudentList onSelect={(id, edit) => { setStudentId(edit ? id : null); setShowForm(edit); }} canEdit={true} />
+              <StudentList 
+                onSelect={(id, edit) => { 
+                  if (edit) {
+                    setStudentId(id); 
+                    setShowForm(true); 
+                  } else {
+                    setStudentId(id);
+                    setShowDetail(true);
+                  }
+                }} 
+                canEdit={true} 
+              />
             </>
           )}
           {showForm && (
-            <StudentForm studentId={studentId} onSuccess={() => { setShowForm(false); setStudentId(null); }} onCancel={() => setShowForm(false)} />
+            <StudentForm 
+              studentId={studentId} 
+              onSuccess={() => { 
+                setShowForm(false); 
+                setStudentId(null); 
+              }} 
+              onCancel={() => setShowForm(false)} 
+            />
+          )}
+          {showDetail && (
+            <StudentDetail 
+              studentId={studentId} 
+              onClose={() => {
+                setShowDetail(false);
+                setStudentId(null);
+              }} 
+            />
           )}
         </div>
       )}
