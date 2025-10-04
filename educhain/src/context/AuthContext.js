@@ -41,19 +41,12 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
 
-      // Map API response to user object
-      const userObj = {
-        id: data.user_id,
-        email: data.email,
-        role: data.role,
-        school: data.school,
-        // add other fields if needed
-      };
-
-      setUser(userObj);
+      // Immediately fetch the latest user profile after login
+      const userProfile = await fetchUserProfile();
+      setUser(userProfile);
       setIsAuthenticated(true);
 
-      return userObj;
+      return userProfile;
     } catch (err) {
       const errorMessage = err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || 'Login failed. Check credentials.';
       setError(errorMessage);
