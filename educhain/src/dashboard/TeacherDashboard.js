@@ -12,6 +12,8 @@ import StudentForm from '../components/StudentForm';
 import StudentDetail from '../components/StudentDetail';
 import AttendanceForm from '../components/AttendanceForm';
 import BatchAssessmentForm from '../components/BatchAssessmentForm';
+import { MessageSquareText } from 'lucide-react'; // Changed from MessageCircle
+import ChatInterface from '../components/chat/ChatInterface'; // Import ChatInterface
 
 const TeacherDashboard = () => {
   const { user, logout } = useAuth();
@@ -22,6 +24,7 @@ const TeacherDashboard = () => {
   const [studentId, setStudentId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false); // State for chat visibility
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,12 +42,22 @@ const TeacherDashboard = () => {
     loadData();
   }, [user, navigate]);
 
-  const headerStyle = { 
-    backgroundColor: 'var(--color-secondary)', 
-    color: 'var(--color-white)', 
-    padding: '20px', 
+  // Inline styles for demonstration, consider using TailwindCSS for consistency
+  const headerStyle = {
+    backgroundColor: 'var(--color-secondary)',
+    color: 'var(--color-white)',
+    padding: '20px',
     borderRadius: 'var(--border-radius)',
-    marginBottom: '20px'
+    marginBottom: '20px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    position: 'relative', // Needed for absolute positioning of logout button
+  };
+
+  const userInfoStyle = {
+    flexGrow: 1, // Allows user info to take available space
+    textAlign: 'center',
   };
 
   const tabStyle = {
@@ -73,8 +86,19 @@ const TeacherDashboard = () => {
     <div className="app-container">
       <div style={headerStyle}>
         <h1 style={{margin: 0}}>Teacher Dashboard</h1>
-        <p>Welcome, {user?.first_name || user?.email} (Role: {user?.role})</p>
-        <button className="button" style={{width: 'auto', backgroundColor: '#e7e7e7', color: 'var(--color-text)'}} onClick={logout}>Logout</button>
+        <div style={userInfoStyle}>
+            <p>Welcome, {user?.first_name || user?.email} (Role: {user?.role})</p>
+        </div>
+        {/* Messenger Icon */}
+        <button 
+            className="button" 
+            style={{width: 'auto', backgroundColor: 'transparent', color: 'var(--color-white)', border: 'none', padding: '0 10px'}}
+            onClick={() => setIsChatOpen(!isChatOpen)}
+        >
+            <MessageSquareText size={28} />
+        </button>
+        {/* Logout Button */}
+        <button className="button" style={{width: 'auto', backgroundColor: '#e7e7e7', color: 'var(--color-text)', marginLeft: 'auto'}} onClick={logout}>Logout</button>
       </div>
 
       <div style={tabStyle}>
@@ -97,7 +121,7 @@ const TeacherDashboard = () => {
       {tab === 'timetable' && <TimetableForm />}
       {tab === 'leave' && <LeaveRequestForm />}
       {tab === 'resource' && <ResourceRequestForm />}
-      {tab === 'pdlog' && <ProfessionalDevelopmentLog />}
+      {tab === 'pdlog' && <ProfessionalDevelopmentLog />} 
       
       {tab === 'students' && (
         <div>
@@ -139,6 +163,8 @@ const TeacherDashboard = () => {
           )}
         </div>
       )}
+      {/* Render ChatInterface component when isChatOpen is true */}
+      <ChatInterface isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
   );
 };
