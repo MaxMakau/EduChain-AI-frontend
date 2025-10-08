@@ -22,6 +22,9 @@ const ParentDashboard = () => {
   const [profileError, setProfileError] = useState(''); // New state for profile error
   const [totalUnreadMessages, setTotalUnreadMessages] = useState(0); // New state for unread messages
 
+  // set backend host for websocket connection
+  const BACKEND_HOST = 'educhain-ai.onrender.com';
+
   // Derived state for unique teachers
   const uniqueTeachers = useMemo(() => {
     const teachers = new Map();
@@ -48,6 +51,43 @@ const ParentDashboard = () => {
     };
     loadData();
   }, []);
+
+  // WebSocket for total unread messages
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) {
+      console.error("ParentDashboard: Authentication token is missing for unread count WebSocket.");
+      return;
+    }
+
+    const unreadWsUrl = `wss://${BACKEND_HOST}/ws/unread_count/?token=${accessToken}`;
+    const ws = new WebSocket(unreadWsUrl);
+
+    ws.onopen = () => {
+      console.log('Unread count WebSocket connection opened.');
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.unread_count !== undefined) {
+        setTotalUnreadMessages(data.unread_count);
+      }
+    };
+
+    ws.onerror = (err) => {
+      console.error('Unread count WebSocket error:', err);
+    };
+
+    ws.onclose = (event) => {
+      console.log('Unread count WebSocket connection closed.', event);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [user]);
 
   useEffect(() => {
     if (activeTab === 'performance' && data?.student_stats?.id) {

@@ -28,6 +28,9 @@ const TeacherDashboard = () => {
   const [totalUnreadMessages, setTotalUnreadMessages] = useState(0); // New state for unread messages
   const navigate = useNavigate();
 
+  // set backend host for websocket connection
+  const BACKEND_HOST = 'educhain-ai.onrender.com';
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -42,6 +45,43 @@ const TeacherDashboard = () => {
     };
     loadData();
   }, [user, navigate]);
+
+  // WebSocket for total unread messages
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) {
+      console.error("TeacherDashboard: Authentication token is missing for unread count WebSocket.");
+      return;
+    }
+
+    const unreadWsUrl = `wss://${BACKEND_HOST}/ws/unread_count/?token=${accessToken}`;
+    const ws = new WebSocket(unreadWsUrl);
+
+    ws.onopen = () => {
+      console.log('Unread count WebSocket connection opened.');
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.unread_count !== undefined) {
+        setTotalUnreadMessages(data.unread_count);
+      }
+    };
+
+    ws.onerror = (err) => {
+      console.error('Unread count WebSocket error:', err);
+    };
+
+    ws.onclose = (event) => {
+      console.log('Unread count WebSocket connection closed.', event);
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [user]);
 
   // Inline styles for demonstration, consider using TailwindCSS for consistency
   const headerStyle = {
