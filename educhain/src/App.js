@@ -8,6 +8,7 @@ import './index.css';
 import LandingPage from './LandingPage'; // <-- NEW IMPORT
 import LoginPage from './auth/LoginPage';
 import OnboardingPage from './auth/OnboardingPage';
+import ParentSetPasswordCreate from './auth/ParentSetPasswordCreate'; // NEW IMPORT
 
 // Dashboard Components
 import ParentDashboard from './dashboard/ParentDashboard';
@@ -45,6 +46,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<LoginPage />} />
           <Route path="/forgot-password" element={<PasswordResetPage />} />
+          <Route path="/set-password/:uidb64/:token" element={<ParentSetPasswordCreate />} /> {/* NEW ROUTE */}
           
           {/* Onboarding Route (Must be authenticated, but doesn't need a role yet) */}
           <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />

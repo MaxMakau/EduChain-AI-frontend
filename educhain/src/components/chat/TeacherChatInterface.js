@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axiosInstance from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
-import { Send, X, PlusCircle } from 'lucide-react'; // Removed MessageSquareText as it's not directly used in this design
+import { Send, X, PlusCircle } from 'lucide-react';
 
-const ChatInterface = ({ isOpen, onClose }) => {
+// set backend host for websocket connection
+const BACKEND_HOST = 'educhain-ai.onrender.com';
+
+const TeacherChatInterface = ({ isOpen, onClose, updateTotalUnreadMessages }) => {
   const { user } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [currentConversation, setCurrentConversation] = useState(null);
@@ -15,21 +18,105 @@ const ChatInterface = ({ isOpen, onClose }) => {
   const [isLoadingParents, setIsLoadingParents] = useState(false);
   const messagesEndRef = useRef(null); // Ref for auto-scrolling
 
+  const ws = useRef(null); // WebSocket instance ref
+  const [isConnected, setIsConnected] = useState(false);
+  const [wsError, setWsError] = useState(null);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const getConversationTitle = (conversation, currentUser) => {
+    // For teacher_parent conversations, always display the parent's name or email.
+    if (conversation.conversation_type === 'teacher_parent' && conversation.parent) {
+      const parent = conversation.parent;
+      return parent.first_name && parent.last_name
+        ? `${parent.first_name} ${parent.last_name}`
+        : parent.first_name || parent.email || `Parent ${parent.id}`;
+    }
+    // Fallback for other conversation types or if parent data is missing.
+    // We will not display the `conversation.title` for teacher_parent conversations on the frontend
+    return `Conversation ${conversation.id}`;
+  };
+
   // Fetch conversations and parents when component mounts or becomes open
   useEffect(() => {
-    if (!isOpen) return;
+    console.log("TeacherChatInterface: Main useEffect triggered.", { isOpen, user, currentConversation });
+    if (!isOpen) {
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        console.log("TeacherChatInterface: Closing WS due to isOpen = false");
+        ws.current.close();
+      }
+      return;
+    }
 
-    const fetchConversations = async () => {
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken || !user?.id) {
+      console.error("TeacherChatInterface: Authentication token or user ID is missing.", { accessToken: !!accessToken, userId: user?.id });
+      setError("Authentication token or user ID is missing.");
+      return;
+    }
+
+    const fetchConversationsAndParents = async () => {
       setIsLoading(true);
       try {
-        const response = await axiosInstance.get('/chat/conversations/');
-        setConversations(response.data);
-        if (!currentConversation && response.data.length > 0) {
-          setCurrentConversation(response.data[0]);
+        const conversationsResponse = await axiosInstance.get('/chat/conversations/');
+        let fetchedConversations = conversationsResponse.data;
+
+        setConversations(fetchedConversations);
+
+        const unreadCount = fetchedConversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+        if (updateTotalUnreadMessages) {
+          updateTotalUnreadMessages(unreadCount);
+        }
+
+        if (!currentConversation && fetchedConversations.length > 0) {
+          const convToSet = fetchedConversations[0];
+          setCurrentConversation(convToSet);
+
+          // Establish WebSocket connection for the first conversation
+          if (convToSet.id && accessToken) {
+            console.log("TeacherChatInterface: Attempting to connect WS from initial load for conversation:", convToSet.id);
+            const websocketUrl = `wss://${BACKEND_HOST}/ws/chat/${convToSet.id}/?token=${accessToken}`;
+            console.log("TeacherChatInterface: WebSocket URL (initial):", websocketUrl);
+            
+            if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+              ws.current.close();
+            }
+            ws.current = new WebSocket(websocketUrl);
+
+            ws.current.onopen = () => {
+              console.log('WebSocket connection opened.');
+              setIsConnected(true);
+              setWsError(null);
+            };
+
+            ws.current.onmessage = (event) => {
+              const data = JSON.parse(event.data);
+              console.log('Received message via WebSocket:', data);
+              setMessages(prevMessages => [...prevMessages, {
+                  id: data.message_id,
+                  sender: { id: data.sender_id, first_name: data.sender_first_name },
+                  content: data.message,
+                  timestamp: data.timestamp,
+              }]);
+              // Refresh conversations to update unread counts
+              fetchConversationsAndParents(); 
+            };
+
+            ws.current.onclose = (event) => {
+              console.log('WebSocket connection closed.', event);
+              setIsConnected(false);
+              if (!event.wasClean) {
+                setWsError('WebSocket connection lost unexpectedly. Please refresh.');
+              }
+            };
+
+            ws.current.onerror = (err) => {
+              console.error('WebSocket error:', err);
+              setWsError('WebSocket connection error. Please try again.');
+            };
+          }
         }
       } catch (err) {
         console.error('Failed to fetch conversations:', err);
@@ -40,7 +127,7 @@ const ChatInterface = ({ isOpen, onClose }) => {
     };
     
     const fetchParents = async () => {
-      if (user?.role !== 'TEACHER') return; // Only fetch parents for teachers
+      if (user?.role !== 'TEACHER') return;
       setIsLoadingParents(true);
       try {
         const studentsResponse = await axiosInstance.get('/students/all/');
@@ -64,34 +151,111 @@ const ChatInterface = ({ isOpen, onClose }) => {
       }
     };
 
-    fetchConversations();
+    fetchConversationsAndParents();
     if (user?.role === 'TEACHER') {
-        fetchParents(); // Always fetch parents if user is a TEACHER and chat is open
+        fetchParents();
     }
-  }, [isOpen, user, currentConversation]);
+  }, [isOpen, user, currentConversation, updateTotalUnreadMessages]);
 
-  // Fetch messages when current conversation changes and scroll to bottom
+  // Re-establish WebSocket when currentConversation changes (if already open)
+  useEffect(() => {
+    console.log("TeacherChatInterface: Reconnect useEffect triggered.", { isOpen, currentConversation, user });
+    if (!isOpen || !currentConversation?.id || !user?.id) {
+      console.log("TeacherChatInterface: Skipping WS reconnect.", { isOpen, currentConversationId: currentConversation?.id, userId: user?.id });
+      return;
+    }
+
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) {
+      console.error("TeacherChatInterface: Authentication token is missing for WebSocket reconnect.");
+      setError("Authentication token is missing for WebSocket.");
+      return;
+    }
+
+    console.log("TeacherChatInterface: Attempting to reconnect WS for conversation:", currentConversation.id);
+    const websocketUrl = `wss://${BACKEND_HOST}/ws/chat/${currentConversation.id}/?token=${accessToken}`;
+    console.log("TeacherChatInterface: WebSocket URL (reconnect):", websocketUrl);
+
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.close();
+    }
+
+    ws.current = new WebSocket(websocketUrl);
+
+    ws.current.onopen = () => {
+      console.log('WebSocket connection opened for new conversation.');
+      setIsConnected(true);
+      setWsError(null);
+    };
+
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('Received message via WebSocket:', data);
+      setMessages(prevMessages => [...prevMessages, {
+          id: data.message_id,
+          sender: { id: data.sender_id, first_name: data.sender_first_name },
+          content: data.message,
+          timestamp: data.timestamp,
+      }]);
+      axiosInstance.get('/chat/conversations/').then(response => {
+        const updatedConversations = response.data;
+        setConversations(updatedConversations);
+        const unreadCount = updatedConversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+        if (updateTotalUnreadMessages) {
+          updateTotalUnreadMessages(unreadCount);
+        }
+      });
+    };
+
+    ws.current.onclose = (event) => {
+      console.log('WebSocket connection closed for new conversation.', event);
+      setIsConnected(false);
+      if (!event.wasClean) {
+        setWsError('WebSocket connection lost unexpectedly. Please refresh.');
+      }
+    };
+
+    ws.current.onerror = (err) => {
+      console.error('WebSocket error:', err);
+      setWsError('WebSocket connection error. Please try again.');
+    };
+
+    return () => {
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        ws.current.close();
+      }
+    };
+
+  }, [currentConversation, isOpen, user, updateTotalUnreadMessages]);
+
+  // Fetch messages for the current conversation via REST API
   useEffect(() => {
     if (!currentConversation) {
       setMessages([]);
       return;
     }
 
-    const fetchMessages = async () => {
+    const fetchHistoricalMessages = async () => {
       setIsLoading(true);
       try {
         const response = await axiosInstance.get(`/chat/conversations/${currentConversation.id}/messages/`);
         setMessages(response.data);
         await axiosInstance.post(`/chat/conversations/${currentConversation.id}/mark-read/`);
+        if (updateTotalUnreadMessages) {
+          const updatedConversationsResponse = await axiosInstance.get('/chat/conversations/');
+          const updatedConversations = updatedConversationsResponse.data;
+          const unreadCount = updatedConversations.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+          updateTotalUnreadMessages(unreadCount);
+        }
       } catch (err) {
-        console.error('Failed to fetch messages:', err);
+        console.error('Failed to fetch historical messages:', err);
         setError('Failed to load messages.');
       } finally {
         setIsLoading(false);
       }
     };
-    fetchMessages();
-  }, [currentConversation]);
+    fetchHistoricalMessages();
+  }, [currentConversation, updateTotalUnreadMessages]);
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
@@ -102,23 +266,31 @@ const ChatInterface = ({ isOpen, onClose }) => {
     e.preventDefault();
     if (!newMessageContent.trim() || !currentConversation) return;
 
-    try {
-      const response = await axiosInstance.post('/chat/messages/create/', {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      const messageData = {
         conversation: currentConversation.id,
-        content: newMessageContent,
-      });
-      setMessages(prevMessages => [...prevMessages, response.data]);
+        message: newMessageContent,
+      };
+      ws.current.send(JSON.stringify(messageData));
       setNewMessageContent('');
-      const updatedConversations = await axiosInstance.get('/chat/conversations/');
-      setConversations(updatedConversations.data);
-    } catch (err) {
-      console.error('Failed to send message:', err);
-      setError('Failed to send message.');
+    } else {
+      setError("Not connected to chat. Please wait or refresh.");
     }
   };
 
   const startConversationWithParent = async (parentId, parentName) => {
-    const title = `Conversation with ${parentName}`;
+    // Check if a conversation with this parent already exists
+    const existingConversation = conversations.find(
+      (conv) => conv.conversation_type === 'teacher_parent' && conv.parent?.id === parentId
+    );
+
+    if (existingConversation) {
+      setCurrentConversation(existingConversation);
+      setError(null);
+      return;
+    }
+
+    const title = `Conversation with ${parentName}`; // This will be overwritten by the backend title, but is a good fallback
     try {
       const response = await axiosInstance.post('/chat/conversations/create/', {
         title: title,
@@ -166,7 +338,7 @@ const ChatInterface = ({ isOpen, onClose }) => {
                         onClick={() => setCurrentConversation(conv)}
                       >
                         <div className="conversation-name font-semibold flex justify-between items-center">
-                          {conv.title || `Conversation ${conv.id}`}
+                          {getConversationTitle(conv, user)}
                           {conv.unread_count > 0 && (
                             <span className="unread-badge ml-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">{conv.unread_count}</span>
                           )}
@@ -206,7 +378,7 @@ const ChatInterface = ({ isOpen, onClose }) => {
                           </div>
                         ))}
                       </div>
-                    ) : ( 
+                    ) : (
                       <p className="text-gray-500 text-sm">No parents available to start a conversation with.</p>
                     )}
                   </div>
@@ -223,7 +395,7 @@ const ChatInterface = ({ isOpen, onClose }) => {
         <div className="chat-main flex-1 flex flex-col">
           <div className="chat-header p-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-800">
-              {currentConversation ? (currentConversation.title || `Conversation ${currentConversation.id}`)
+              {currentConversation ? getConversationTitle(currentConversation, user)
                                    : "Select a conversation or start a new one"}
             </h2>
           </div>
@@ -236,7 +408,7 @@ const ChatInterface = ({ isOpen, onClose }) => {
                   className={`message mb-3 p-3 rounded-lg max-w-[70%] ${message.sender.id === user.id ? 'self-end ml-auto bg-blue-500 text-white' : 'self-start mr-auto bg-gray-200 text-gray-800'}`}
                 >
                   <div className="message-info font-semibold text-sm mb-1">
-                    {message.sender.first_name}
+                    {message.sender.id === user.id ? "You" : message.sender.first_name}
                   </div>
                   {message.content}
                   <div className="message-timestamp text-xs mt-1 opacity-75">
@@ -261,7 +433,7 @@ const ChatInterface = ({ isOpen, onClose }) => {
                   value={newMessageContent}
                   onChange={(e) => setNewMessageContent(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.ctrlKey && e.key === 'Enter') {
+                    if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       handleSendMessage(e);
                     }
@@ -279,4 +451,4 @@ const ChatInterface = ({ isOpen, onClose }) => {
   );
 };
 
-export default ChatInterface;
+export default TeacherChatInterface;

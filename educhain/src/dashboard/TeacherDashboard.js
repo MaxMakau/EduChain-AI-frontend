@@ -13,7 +13,7 @@ import StudentDetail from '../components/StudentDetail';
 import AttendanceForm from '../components/AttendanceForm';
 import BatchAssessmentForm from '../components/BatchAssessmentForm';
 import { MessageSquareText } from 'lucide-react'; // Changed from MessageCircle
-import ChatInterface from '../components/chat/ChatInterface'; // Import ChatInterface
+import TeacherChatInterface from '../components/chat/TeacherChatInterface'; // Import TeacherChatInterface
 
 const TeacherDashboard = () => {
   const { user, logout } = useAuth();
@@ -25,6 +25,7 @@ const TeacherDashboard = () => {
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false); // State for chat visibility
+  const [totalUnreadMessages, setTotalUnreadMessages] = useState(0); // New state for unread messages
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -91,11 +92,16 @@ const TeacherDashboard = () => {
         </div>
         {/* Messenger Icon */}
         <button 
-            className="button" 
+            className="button relative" 
             style={{width: 'auto', backgroundColor: 'transparent', color: 'var(--color-white)', border: 'none', padding: '0 10px'}}
             onClick={() => setIsChatOpen(!isChatOpen)}
         >
             <MessageSquareText size={28} />
+            {totalUnreadMessages > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {totalUnreadMessages}
+              </span>
+            )}
         </button>
         {/* Logout Button */}
         <button className="button" style={{width: 'auto', backgroundColor: '#e7e7e7', color: 'var(--color-text)', marginLeft: 'auto'}} onClick={logout}>Logout</button>
@@ -164,7 +170,7 @@ const TeacherDashboard = () => {
         </div>
       )}
       {/* Render ChatInterface component when isChatOpen is true */}
-      <ChatInterface isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      <TeacherChatInterface isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} updateTotalUnreadMessages={setTotalUnreadMessages} />
     </div>
   );
 };
