@@ -81,3 +81,23 @@ body {
 .app-container {
   padding: 20px;
 }
+
+.input {
+  @apply w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue transition;
+}
+
+.btn-primary {
+  @apply bg-oceanBlue text-white py-2 px-4 rounded-lg hover:bg-[#1E5B7E] transition font-medium flex justify-center items-center;
+}
+
+.btn-google {
+  @apply flex justify-center items-center gap-2 py-2 px-4 border border-gray-300 rounded-lg text-darkText hover:bg-gray-50 transition;
+}
+
+.tab {
+  @apply flex-1 text-center py-2 border-b-2 border-transparent text-gray-500 font-medium cursor-pointer transition;
+}
+
+.tab.active {
+  @apply border-oceanBlue text-oceanBlue font-semibold;
+}

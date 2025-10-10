@@ -1,8 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { signupUser } from '../api/auth';
-import Toast from '../components/Toast';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { signupUser } from "../api/auth";
+import Toast from "../components/Toast";
+import { FcGoogle } from "react-icons/fc";
+import logo from "../assets/logo.png";
+
+const colors = {
+  oceanBlue: "#2772A0",
+  cloudySky: "#CCDDEA",
+  white: "#FFFFFF",
+  darkText: "#1E293B",
+};
 
 const LOGIN_ROLES = [
   { value: "HEADTEACHER", label: "Headteacher" },
@@ -10,247 +19,345 @@ const LOGIN_ROLES = [
   { value: "OFFICER", label: "County Officer" },
 ];
 
-function SignupForm({ showToast }) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [role, setRole] = useState('');
-  const [schoolId, setSchoolId] = useState('');
+// Reusable input component
+const Input = (props) => (
+  <input
+    {...props}
+    className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${colors.oceanBlue}] focus:border-transparent outline-none transition`}
+  />
+);
+
+// ---------------- SIGNUP FORM ----------------
+function SignupForm() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [role, setRole] = useState("");
+  const [schoolId, setSchoolId] = useState("");
   const [schools, setSchools] = useState([]);
   const [schoolsLoading, setSchoolsLoading] = useState(false);
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [localMessage, setLocalMessage] = useState({ message: '', type: '' });
+  const [localMessage, setLocalMessage] = useState({ message: "", type: "" });
 
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const passwordsMatch = password === confirmPassword;
 
-  // Fetch schools on mount
   useEffect(() => {
     setSchoolsLoading(true);
-    fetch(process.env.REACT_APP_API_URL + '/schools/all/')
-      .then(res => res.json())
-      .then(data => {
+    fetch(process.env.REACT_APP_API_URL + "/schools/all/")
+      .then((res) => res.json())
+      .then((data) => {
         setSchools(data);
         setSchoolsLoading(false);
       })
       .catch(() => setSchoolsLoading(false));
   }, []);
 
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
   const handleSignup = async (e) => {
     e.preventDefault();
-    setLocalMessage({ message: '', type: '' });
-    if (password.length < 8) {
-      return setLocalMessage({ message: 'Password must be at least 8 characters.', type: 'error' });
-    }
-    if (!passwordsMatch) {
-      return setLocalMessage({ message: 'Passwords do not match.', type: 'error' });
-    }
-    if (!role) {
-      return setLocalMessage({ message: 'Please select a role.', type: 'error' });
-    }
-    if (role === 'TEACHER' && !schoolId) {
-      return setLocalMessage({ message: 'Please select your school.', type: 'error' });
-    }
+    setLocalMessage({ message: "", type: "" });
+
+    if (password.length < 8)
+      return setLocalMessage({
+        message: "Password must be at least 8 characters.",
+        type: "error",
+      });
+    if (!passwordsMatch)
+      return setLocalMessage({
+        message: "Passwords do not match.",
+        type: "error",
+      });
+    if (!role)
+      return setLocalMessage({
+        message: "Please select a role.",
+        type: "error",
+      });
+
+    if (role === "TEACHER" && !schoolId)
+      return setLocalMessage({
+        message: "Please select your school.",
+        type: "error",
+      });
+
     setIsProcessing(true);
     try {
-      const signupRes = await signupUser({
+      await signupUser({
         first_name: firstName,
         last_name: lastName,
         email,
         password,
         role,
         ...(phoneNumber && { phone_number: phoneNumber }),
-        ...(role === 'TEACHER' && { school: schoolId }),
+        ...(role === "TEACHER" && { school: schoolId }),
       });
 
-      // Automatically log in the user after signup
       const userProfile = await login(email, password);
-
-      // Redirect logic after login
-      if (userProfile.role === 'HEADTEACHER' && !userProfile.school) {
-        navigate('/register-school', { replace: true });
+      if (userProfile.role === "HEADTEACHER" && !userProfile.school) {
+        navigate("/register-school", { replace: true });
         return;
       }
 
-      // Redirect to dashboard based on role
-      if (userProfile.role) {
-        navigate(`/dashboard/${userProfile.role.toLowerCase()}`, { replace: true });
-      } else {
-        navigate('/onboarding', { replace: true });
-      }
+      navigate(
+        userProfile.role
+          ? `/dashboard/${userProfile.role.toLowerCase()}`
+          : "/onboarding",
+        { replace: true }
+      );
 
-      setLocalMessage({ message: 'Account created! Redirecting...', type: 'success' });
-      setFirstName(''); setLastName(''); setEmail(''); setPhoneNumber(''); setRole(''); setPassword(''); setConfirmPassword(''); setSchoolId('');
+      setLocalMessage({
+        message: "Account created successfully!",
+        type: "success",
+      });
     } catch (err) {
-      const apiError = err.response?.data?.email?.[0] ||
+      const apiError =
+        err.response?.data?.email?.[0] ||
         err.response?.data?.role?.[0] ||
         err.message ||
-        'Signup failed. Please try again.';
-      setLocalMessage({ message: apiError, type: 'error' });
+        "Signup failed. Please try again.";
+      setLocalMessage({ message: apiError, type: "error" });
     } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <form onSubmit={handleSignup}>
-      <div className="input-group">
-        <label>First Name</label>
-        <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} required />
+    <form onSubmit={handleSignup} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Input
+          type="text"
+          placeholder="First Name"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          required
+        />
+        <Input
+          type="text"
+          placeholder="Last Name"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          required
+        />
       </div>
-      <div className="input-group">
-        <label>Last Name</label>
-        <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} required />
-      </div>
-      <div className="input-group">
-        <label>Email</label>
-        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-      </div>
-      <div className="input-group">
-        <label>Phone Number</label>
-        <input type="tel" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} />
-      </div>
-      <div className="input-group">
-        <label>Role</label>
-        <select value={role} onChange={e => setRole(e.target.value)} required>
-          <option value="">Select your role...</option>
-          {LOGIN_ROLES.map(r => (
-            <option key={r.value} value={r.value}>{r.label}</option>
+
+      <Input
+        type="email"
+        placeholder="Email Address"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
+
+      <Input
+        type="tel"
+        placeholder="Phone Number (optional)"
+        value={phoneNumber}
+        onChange={(e) => setPhoneNumber(e.target.value)}
+      />
+
+      <select
+        className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${colors.oceanBlue}] transition`}
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+        required
+      >
+        <option value="">Select Role</option>
+        {LOGIN_ROLES.map((r) => (
+          <option key={r.value} value={r.value}>
+            {r.label}
+          </option>
+        ))}
+      </select>
+
+      {role === "TEACHER" && (
+        <select
+          className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${colors.oceanBlue}] transition`}
+          value={schoolId}
+          onChange={(e) => setSchoolId(e.target.value)}
+          required
+        >
+          <option value="">Select School</option>
+          {schools.map((school) => (
+            <option key={school.id} value={school.id}>
+              {school.name} ({school.code})
+            </option>
           ))}
         </select>
-      </div>
-      {/* Show school selection only if role is TEACHER */}
-      {role === 'TEACHER' && (
-        <div className="input-group">
-          <label>Select School</label>
-          {schoolsLoading ? (
-            <div style={{ color: '#888' }}>Loading schools...</div>
-          ) : (
-            <select value={schoolId} onChange={e => setSchoolId(e.target.value)} required>
-              <option value="">Choose your school...</option>
-              {schools.map(school => (
-                <option key={school.id} value={school.id}>
-                  {school.name} ({school.code})
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
       )}
-      <div className="input-group">
-        <label>Password (min 8 chars)</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength="8" />
-      </div>
-      <div className="input-group">
-        <label>Confirm Password</label>
-        <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required minLength="8" />
-        {!passwordsMatch && confirmPassword && (
-          <p style={{ color: '#D32F2F', fontSize: '0.8rem', marginTop: '5px' }}>Passwords must match.</p>
-        )}
-      </div>
-      <button type="submit" className="button primary" disabled={isProcessing}>
-        {isProcessing ? 'Signing up...' : 'Sign Up'}
+
+      <Input
+        type="password"
+        placeholder="Password (min 8 characters)"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        minLength="8"
+      />
+      <Input
+        type="password"
+        placeholder="Confirm Password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        required
+      />
+
+      {!passwordsMatch && confirmPassword && (
+        <p className="text-red-500 text-sm">Passwords must match.</p>
+      )}
+
+      <button
+        type="submit"
+        className={`w-full py-3 rounded-lg text-white font-semibold transition ${
+          isProcessing ? "bg-gray-400" : "bg-[#2772A0] hover:bg-[#1f5b80]"
+        }`}
+        disabled={isProcessing}
+      >
+        {isProcessing ? "Creating Account..." : "Sign Up"}
       </button>
-      <div style={{ marginTop: '10px', fontSize: '0.85rem', color: '#888' }}>
-        API: <code>POST /users/signup/</code>
-      </div>
+
+      <button
+        type="button"
+        onClick={() => alert("Google signup coming soon!")}
+        className="w-full py-3 rounded-lg border flex items-center justify-center gap-2 hover:bg-gray-50 transition"
+      >
+        <FcGoogle size={22} /> Sign up with Google
+      </button>
+
       <Toast
         message={localMessage.message}
         type={localMessage.type}
-        onClose={() => setLocalMessage({ message: '', type: '' })}
+        onClose={() => setLocalMessage({ message: "", type: "" })}
       />
     </form>
   );
 }
 
-function LoginForm({ showToast }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { login, isLoading, isAuthenticated, user } = useAuth();
+// ---------------- LOGIN FORM ----------------
+function LoginForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { login, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [localMessage, setLocalMessage] = useState({ message: '', type: '' });
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      if (user?.role) {
-        navigate(`/dashboard/${user.role.toLowerCase()}`, { replace: true });
-      } else {
-        navigate('/onboarding', { replace: true });
-      }
-    }
-  }, [isAuthenticated, user?.role, navigate]);
+  const [localMessage, setLocalMessage] = useState({ message: "", type: "" });
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLocalMessage({ message: '', type: '' });
     try {
-      await login(email, password); // POST /users/login/
+      const userProfile = await login(email, password);
+
+      // ✅ Navigate based on role
+      if (userProfile.role) {
+        navigate(`/dashboard/${userProfile.role.toLowerCase()}`, { replace: true });
+      } else {
+        navigate("/onboarding", { replace: true });
+      }
     } catch (err) {
-      const apiError = err.response?.data?.email?.[0] ||
-        err.message ||
-        'Login failed. Please try again.';
-      setLocalMessage({ message: apiError, type: 'error' });
+      setLocalMessage({
+        message: err.message || "Login failed. Try again.",
+        type: "error",
+      });
     }
   };
 
   return (
-    <form onSubmit={handleLogin}>
-      <div className="input-group">
-        <label>Email</label>
-        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-      </div>
-      <div className="input-group">
-        <label>Password</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength="8" />
-      </div>
-      <button type="submit" className="button primary" disabled={isLoading}>
-        {isLoading ? 'Logging in...' : 'Log In'}
+    <form onSubmit={handleLogin} className="space-y-4">
+      <Input
+        type="email"
+        placeholder="Email Address"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
+
+      <Input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+
+      <button
+        type="submit"
+        className={`w-full py-3 rounded-lg text-white font-semibold transition ${
+          isLoading ? "bg-gray-400" : "bg-[#2772A0] hover:bg-[#1f5b80]"
+        }`}
+        disabled={isLoading}
+      >
+        {isLoading ? "Logging in..." : "Log In"}
       </button>
-      <div style={{ marginTop: '10px', fontSize: '0.85rem', color: '#888' }}>
-        API: <code>POST /users/login/</code>
+
+      <button
+        type="button"
+        onClick={() => alert("Google login coming soon!")}
+        className="w-full py-3 rounded-lg border flex items-center justify-center gap-2 hover:bg-gray-50 transition"
+      >
+        <FcGoogle size={22} /> Log in with Google
+      </button>
+
+      <div className="text-center mt-3">
+        <a href="/forgot-password" className="text-[#2772A0] hover:underline text-sm">
+          Forgot password?
+        </a>
       </div>
+
       <Toast
         message={localMessage.message}
         type={localMessage.type}
-        onClose={() => setLocalMessage({ message: '', type: '' })}
+        onClose={() => setLocalMessage({ message: "", type: "" })}
       />
     </form>
   );
 }
 
+// ---------------- PAGE WRAPPER ----------------
 const LoginPage = () => {
-  const [tab, setTab] = useState('login');
-  const tabStyle = {
-    display: 'flex',
-    justifyContent: 'center',
-    marginBottom: '20px',
-  };
-  const buttonStyle = active => ({
-    padding: '10px 30px',
-    border: 'none',
-    borderBottom: active ? '2px solid var(--color-primary)' : '2px solid #eee',
-    background: 'none',
-    color: active ? 'var(--color-primary)' : '#888',
-    fontWeight: active ? 'bold' : 'normal',
-    cursor: 'pointer',
-    outline: 'none',
-    fontSize: '1rem',
-  });
+  const [tab, setTab] = useState("login");
 
   return (
-    <div className="card">
-      <div style={tabStyle}>
-        <button style={buttonStyle(tab === 'login')} onClick={() => setTab('login')}>Log In</button>
-        <button style={buttonStyle(tab === 'signup')} onClick={() => setTab('signup')}>Sign Up</button>
-      </div>
-      {tab === 'login' ? <LoginForm /> : <SignupForm />}
-      <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.9rem' }}>
-        <a href="/forgot-password" style={{ color: 'var(--color-primary)' }}>Forgot Password?</a>
+    <div
+      className="min-h-screen flex flex-col justify-center items-center px-4"
+      style={{ backgroundColor: colors.cloudySky }}
+    >
+      {/* CARD */}
+      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md mt-10 mb-16">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <img src={logo} alt="EduChainAI Logo" className="h-14 w-14" />
+        </div>
+
+        {/* Tabs */}
+        <div className="flex justify-center space-x-6 mb-6">
+          <button
+            className={`pb-2 border-b-2 transition ${
+              tab === "login"
+                ? "border-[#2772A0] text-[#2772A0] font-semibold"
+                : "border-transparent text-gray-500"
+            }`}
+            onClick={() => setTab("login")}
+          >
+            Log In
+          </button>
+          <button
+            className={`pb-2 border-b-2 transition ${
+              tab === "signup"
+                ? "border-[#2772A0] text-[#2772A0] font-semibold"
+                : "border-transparent text-gray-500"
+            }`}
+            onClick={() => setTab("signup")}
+          >
+            Sign Up
+          </button>
+        </div>
+
+        {tab === "login" ? <LoginForm /> : <SignupForm />}
+
+        <p className="text-center text-sm text-gray-500 mt-6">
+          © {new Date().getFullYear()} EduChainAI. All rights reserved.
+        </p>
       </div>
     </div>
   );
