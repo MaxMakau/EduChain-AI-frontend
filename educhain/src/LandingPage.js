@@ -17,7 +17,7 @@ const EduChainLanding = () => {
       style={{ backgroundColor: colors.cloudySky, color: colors.darkText }}
     >
       {/* Header */}
-      <header className="fixed top-0 left-0 w-full h-16 bg-white shadow-sm z-50 px-4 sm:px-8 flex justify-between items-center">
+      <header className="fixed top-0 left-0 w-full h-14 bg-white shadow-sm z-50 px-4 sm:px-8 flex justify-between items-center">
         <div className="flex items-center space-x-3">
           <img src={logo} alt="EduChainAI Logo" className="w-9 h-9" />
           <h1 className="text-lg sm:text-xl font-bold" style={{ color: colors.oceanBlue }}>

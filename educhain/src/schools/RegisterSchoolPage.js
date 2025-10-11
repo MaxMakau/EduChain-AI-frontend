@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { MapPin } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 const SUBCOUNTIES = [
   "Westlands", "Langata", "Embakasi East", "Embakasi West", "Embakasi South",
@@ -9,8 +11,15 @@ const SUBCOUNTIES = [
   "Kasarani", "Roysambu", "Mathare", "Starehe", "Kamukunji", "Makadara"
 ];
 
+const colors = {
+  oceanBlue: '#2772A0',
+  cloudySky: '#CCDDEA',
+  white: '#FFFFFF',
+  textDark: '#1E293B'
+};
+
 const RegisterSchoolPage = () => {
-  const { user, updateUser } = useAuth();
+  const { updateUser } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: '',
@@ -23,9 +32,7 @@ const RegisterSchoolPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleChange = e => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
   const getLocation = () => {
     if (!navigator.geolocation) {
@@ -54,19 +61,16 @@ const RegisterSchoolPage = () => {
         name: form.name,
         code: form.code,
         subcounty: form.subcounty,
+        ...(form.latitude && form.longitude && {
+          latitude: form.latitude,
+          longitude: form.longitude
+        })
       };
-      if (form.latitude && form.longitude) {
-        payload.latitude = form.latitude;
-        payload.longitude = form.longitude;
-      }
+
       const res = await axiosInstance.post('/schools/register/', payload);
       setSuccess('School registered successfully!');
-      // Update user context with new school
       updateUser({ school: res.data });
-      // Redirect to dashboard after success
-      setTimeout(() => {
-        navigate('/dashboard/headteacher', { replace: true });
-      }, 1200);
+      setTimeout(() => navigate('/dashboard/headteacher', { replace: true }), 1200);
     } catch (err) {
       setError(err.response?.data?.detail || err.response?.data?.code || err.message);
     } finally {
@@ -75,52 +79,138 @@ const RegisterSchoolPage = () => {
   };
 
   return (
-    <div className="card" style={{ maxWidth: 500, margin: '40px auto' }}>
-      <h2 style={{ textAlign: 'center', color: 'var(--color-primary)' }}>Register Your School</h2>
-      <form onSubmit={handleSubmit}>
-        <div className="input-group">
-          <label>School Name</label>
-          <input name="name" value={form.name} onChange={handleChange} required maxLength={255} />
+    <div
+      className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-8 py-8"
+      style={{
+        background: `linear-gradient(to bottom right, ${colors.cloudySky}, ${colors.white})`
+      }}
+    >
+      {/* Card container */}
+      <div
+        className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8 sm:p-10 mx-4"
+        style={{
+          margin: '2rem',
+          boxShadow: '0 8px 20px rgba(0,0,0,0.08)'
+        }}
+      >
+        {/* Logo + Heading */}
+        <div className="flex flex-col items-center mb-6">
+          <img src={logo} alt="EduChainAI Logo" className="w-14 h-14 mb-2" />
+          <h1 className="text-xl font-bold" style={{ color: colors.oceanBlue }}>
+            EduChainAI
+          </h1>
         </div>
-        <div className="input-group">
-          <label>School Code</label>
-          <input name="code" value={form.code} onChange={handleChange} required maxLength={20} />
-        </div>
-        <div className="input-group">
-          <label>Subcounty</label>
-          <select name="subcounty" value={form.subcounty} onChange={handleChange} required>
-            <option value="">Select Subcounty</option>
-            {SUBCOUNTIES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-        <div className="input-group">
-          <label>Location (optional)</label>
-          <div style={{ display: 'flex', gap: 10 }}>
+
+        <h2
+          className="text-xl sm:text-2xl font-semibold mb-6 text-center"
+          style={{ color: colors.textDark }}
+        >
+          Register Your School
+        </h2>
+
+        {/* Form */}
+        <form className="space-y-4 text-left" onSubmit={handleSubmit}>
+          {/* School Name */}
+          <div>
+            <label className="block text-sm font-medium mb-1">School Name</label>
             <input
-              name="latitude"
-              value={form.latitude}
+              type="text"
+              name="name"
+              value={form.name}
               onChange={handleChange}
-              placeholder="Latitude"
-              type="number"
-              step="any"
+              required
+              maxLength={255}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
             />
-            <input
-              name="longitude"
-              value={form.longitude}
-              onChange={handleChange}
-              placeholder="Longitude"
-              type="number"
-              step="any"
-            />
-            <button type="button" className="button" onClick={getLocation}>Get Location</button>
           </div>
-        </div>
-        {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">{success}</div>}
-        <button type="submit" className="button primary" disabled={loading}>
-          {loading ? 'Registering...' : 'Register School'}
-        </button>
-      </form>
+
+          {/* School Code */}
+          <div>
+            <label className="block text-sm font-medium mb-1">School Code</label>
+            <input
+              type="text"
+              name="code"
+              value={form.code}
+              onChange={handleChange}
+              required
+              maxLength={20}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
+            />
+          </div>
+
+          {/* Subcounty */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Subcounty</label>
+            <select
+              name="subcounty"
+              value={form.subcounty}
+              onChange={handleChange}
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
+            >
+              <option value="">Select Subcounty</option>
+              {SUBCOUNTIES.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Location */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Location (optional)</label>
+            <div className="flex gap-2 flex-wrap">
+              <input
+                name="latitude"
+                value={form.latitude}
+                onChange={handleChange}
+                placeholder="Latitude"
+                type="number"
+                step="any"
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
+              />
+              <input
+                name="longitude"
+                value={form.longitude}
+                onChange={handleChange}
+                placeholder="Longitude"
+                type="number"
+                step="any"
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
+              />
+              <button
+                type="button"
+                onClick={getLocation}
+                className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-white transition"
+                style={{ backgroundColor: colors.oceanBlue }}
+              >
+                <MapPin size={16} /> Get
+              </button>
+            </div>
+          </div>
+
+          {/* Messages */}
+          {error && <div className="text-red-600 text-sm text-center mt-2">{error}</div>}
+          {success && <div className="text-green-600 text-sm text-center mt-2">{success}</div>}
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg text-white font-semibold py-2 mt-4 transition"
+            style={{
+              backgroundColor: colors.oceanBlue,
+              opacity: loading ? 0.7 : 1
+            }}
+          >
+            {loading ? 'Registering...' : 'Register School'}
+          </button>
+        </form>
+      </div>
+
+      {/* Footer */}
+      <p className="text-sm text-gray-600 mt-6 text-center">
+        © {new Date().getFullYear()} EduChainAI. Empowering ECDE with Trust & Technology.
+      </p>
     </div>
   );
 };
