@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Brain, ShieldCheck, BarChart3 } from 'lucide-react';
 import logo from './assets/logo.png';
 
 const colors = {
@@ -18,30 +17,27 @@ const EduChainLanding = () => {
       style={{ backgroundColor: colors.cloudySky, color: colors.darkText }}
     >
       {/* Header */}
-      <header className="fixed top-0 left-0 w-full h-14 bg-white shadow-sm z-50 px-6 md:px-12 py-4 flex justify-between items-center">
+      <header className="fixed top-0 left-0 w-full h-14 bg-white shadow-sm z-50 px-4 sm:px-8 py-3 flex justify-between items-center">
         <div className="flex items-center space-x-3">
-          <img src={logo} alt="EduChainAI Logo" className="w-10 h-10" />
-          <div>
-            <h1
-              className="text-xl font-bold"
-              style={{ color: colors.oceanBlue }}
-            >
-              EduChainAI
-            </h1>
-          </div>
+          <img src={logo} alt="EduChainAI Logo" className="w-9 h-9" />
+          <h1 className="text-lg sm:text-xl font-bold" style={{ color: colors.oceanBlue }}>
+            EduChainAI
+          </h1>
         </div>
 
-        <nav className="flex items-center space-x-6">
+        <nav className="flex items-center space-x-4 sm:space-x-6">
+          {/* Hide Login link on small screens */}
           <Link
             to="/login"
-            className="hover:underline font-medium"
+            className="hidden sm:block hover:underline font-medium"
             style={{ color: colors.oceanBlue }}
           >
             Login
           </Link>
+
           <Link
             to="/signup"
-            className="px-4 py-2 rounded-lg font-semibold text-white hover:opacity-90 transition"
+            className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg font-semibold text-white hover:opacity-90 transition"
             style={{ backgroundColor: colors.oceanBlue }}
           >
             Get Started
@@ -50,12 +46,12 @@ const EduChainLanding = () => {
       </header>
 
       {/* Hero Section */}
-<section className="flex flex-col justify-center items-center text-center mt-24 md:mt-24 px-6 md:px-12">
+      <section className="flex flex-1 flex-col justify-center items-center text-center px-6 mt-16 sm:mt-24">
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-3xl md:text-5xl font-extrabold leading-snug max-w-3xl mb-6"
+          className="text-3xl sm:text-5xl font-extrabold leading-snug max-w-3xl mb-6"
         >
           Transforming ECDE Management
           <br />
@@ -67,36 +63,28 @@ const EduChainLanding = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
-          className="max-w-2xl text-gray-700 mb-10 text-lg"
+          className="max-w-2xl text-gray-700 mb-10 text-base sm:text-lg"
         >
           A next-generation data platform that digitizes and secures ECDE school
-          management across the Country. From manual and reactive to digital,
+          management across the country. From manual and reactive to digital,
           proactive, and accountable.
         </motion.p>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <Link
             to="/signup"
-            className="px-6 py-3 rounded-xl font-semibold text-white hover:opacity-90 transition"
+            className="px-8 py-3 rounded-xl font-semibold text-white hover:opacity-90 transition text-base"
             style={{ backgroundColor: colors.oceanBlue }}
           >
             Sign Up
           </Link>
           <Link
             to="/login"
-            className="border-2 px-6 py-3 rounded-xl font-semibold hover:text-white hover:opacity-90 transition"
+            className="border-2 px-8 py-3 rounded-xl font-semibold hover:text-white hover:bg-[#2772A0] transition text-base"
             style={{
               borderColor: colors.oceanBlue,
               color: colors.oceanBlue,
               backgroundColor: 'transparent',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = colors.oceanBlue;
-              e.target.style.color = 'white';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = 'transparent';
-              e.target.style.color = colors.oceanBlue;
             }}
           >
             Sign In
@@ -104,17 +92,13 @@ const EduChainLanding = () => {
         </div>
       </section>
 
-     
-
       {/* Footer */}
       <footer
-        className="text-black text-center py-6 mt-auto"
+        className="text-black text-center py-6 mt-auto text-sm"
         style={{ backgroundColor: colors.cloudySky }}
       >
-        <p className="text-sm">
-          © {new Date().getFullYear()} EduChainAI — Empowering ECDE with Trust &
-          Technology.
-        </p>
+        © {new Date().getFullYear()} EduChainAI — Empowering ECDE with Trust &
+        Technology.
       </footer>
     </div>
   );
