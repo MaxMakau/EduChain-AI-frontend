@@ -101,3 +101,4 @@ body {
 .tab.active {
   @apply border-oceanBlue text-oceanBlue font-semibold;
 }
+

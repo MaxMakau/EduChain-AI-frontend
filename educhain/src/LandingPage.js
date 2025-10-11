@@ -13,11 +13,11 @@ const colors = {
 const EduChainLanding = () => {
   return (
     <div
-      className="min-h-screen flex flex-col font-sans"
+      className="min-h-screen flex flex-col font-sans relative"
       style={{ backgroundColor: colors.cloudySky, color: colors.darkText }}
     >
       {/* Header */}
-      <header className="fixed top-0 left-0 w-full h-14 bg-white shadow-sm z-50 px-4 sm:px-8 py-3 flex justify-between items-center">
+      <header className="fixed top-0 left-0 w-full h-16 bg-white shadow-sm z-50 px-4 sm:px-8 flex justify-between items-center">
         <div className="flex items-center space-x-3">
           <img src={logo} alt="EduChainAI Logo" className="w-9 h-9" />
           <h1 className="text-lg sm:text-xl font-bold" style={{ color: colors.oceanBlue }}>
@@ -26,7 +26,7 @@ const EduChainLanding = () => {
         </div>
 
         <nav className="flex items-center space-x-4 sm:space-x-6">
-          {/* Hide Login link on small screens */}
+          {/* Hide Login on mobile */}
           <Link
             to="/login"
             className="hidden sm:block hover:underline font-medium"
@@ -46,7 +46,9 @@ const EduChainLanding = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="flex flex-1 flex-col justify-center items-center text-center px-6 mt-16 sm:mt-24">
+      <section
+        className="flex flex-1 flex-col justify-center items-center text-center px-6 pt-20 pb-12 sm:pt-28"
+      >
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -70,7 +72,8 @@ const EduChainLanding = () => {
           proactive, and accountable.
         </motion.p>
 
-        <div className="flex flex-col sm:flex-row gap-4">
+        {/* Buttons: stay side-by-side even on mobile */}
+        <div className="flex flex-row flex-wrap justify-center gap-4">
           <Link
             to="/signup"
             className="px-8 py-3 rounded-xl font-semibold text-white hover:opacity-90 transition text-base"
