@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { fetchDashboardData } from '../api/dashboard';
 import { useNavigate } from 'react-router-dom';
-import TimetableForm from '../components/TimetableForm';
+import SchoolTimetableAndRoster from '../components/SchoolTimetableAndRoster';
 import LeaveRequestForm from '../components/LeaveRequestForm';
 import ResourceRequestForm from '../components/ResourceRequestForm';
 import ProfessionalDevelopmentLog from '../components/ProfessionalDevelopmentLog';
@@ -264,7 +264,7 @@ const TeacherDashboard = () => {
         {/* Other Tabs */}
         {tab === 'attendance' && <AttendanceForm />}
         {tab === 'assessments' && <BatchAssessmentForm />}
-        {tab === 'timetable' && <TimetableForm />}
+        {tab === 'timetable' && <SchoolTimetableAndRoster />}
         {tab === 'leave' && <LeaveRequestForm />}
         {tab === 'resource' && <ResourceRequestForm />}
         {tab === 'pdlog' && <ProfessionalDevelopmentLog />}
