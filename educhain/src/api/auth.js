@@ -82,3 +82,36 @@ export async function completeOnboarding(role, schoolCode, extraDetails) {
     throw error;
   }
 }
+
+/**
+ * Initiates the password reset process by sending a link to the user's email.
+ * Endpoint: POST /users/forgot-password/
+ */
+export async function forgotPassword(email) {
+  try {
+    const response = await axiosInstance.post(`/users/forgot-password/`, { email });
+    return response.data;
+  } catch (error) {
+    console.error('Forgot password failed:', error.response?.data || error.message);
+    throw error;
+  }
+}
+
+/**
+ * Resets the user's password using the UID, token, and new password.
+ * Endpoint: POST /users/reset-password/
+ */
+export async function resetPassword(uid, token, new_password, confirm_password) {
+  try {
+    const response = await axiosInstance.post(`/users/reset-password/`, {
+      uid,
+      token,
+      new_password,
+      confirm_password,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Reset password failed:', error.response?.data || error.message);
+    throw error;
+  }
+}

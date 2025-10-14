@@ -9,6 +9,8 @@ import LandingPage from './LandingPage'; // <-- NEW IMPORT
 import LoginPage from './auth/LoginPage';
 import OnboardingPage from './auth/OnboardingPage';
 import ParentSetPasswordCreate from './auth/ParentSetPasswordCreate'; // NEW IMPORT
+import ForgotPasswordPage from './auth/ForgotPasswordPage';
+import ResetPasswordPage from './auth/ResetPasswordPage';
 
 // Dashboard Components
 import ParentDashboard from './dashboard/ParentDashboard';
@@ -26,16 +28,6 @@ import AIAnalytics from './dashboard/AIAnalytics';
 
 // Note: You'll need to create OfficerDashboard.js and StudentDashboard.js placeholders
 
-// Placeholder for Forgot/Reset Password
-const PasswordResetPage = () => (
-  <div className="card">
-    <h2 style={{color: 'var(--color-primary)', textAlign: 'center'}}>Password Reset</h2>
-    <p style={{textAlign: 'center'}}>Implement POST /users/password/reset/ and /users/password/reset/confirm/ here.</p>
-    <div className="input-group"><input type="email" placeholder="Enter your email" /></div>
-    <button className="button primary">Send Reset Link</button>
-  </div>
-);
-
 function App() {
   return (
     <Router>
@@ -45,7 +37,8 @@ function App() {
           <Route path="/" element={<LandingPage />} /> {/* <-- NEW LANDING PAGE */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<LoginPage />} />
-          <Route path="/forgot-password" element={<PasswordResetPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:uidb64/:token" element={<ResetPasswordPage />} />
           <Route path="/set-password/:uidb64/:token" element={<ParentSetPasswordCreate />} /> {/* NEW ROUTE */}
           
           {/* Onboarding Route (Must be authenticated, but doesn't need a role yet) */}
