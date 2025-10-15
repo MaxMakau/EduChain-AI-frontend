@@ -11,6 +11,7 @@ import SchoolOverview from "../components/SchoolOverview";
 import StudentList from "../components/StudentList";
 import StudentDetail from "../components/StudentDetail";
 import ChatInterface from "../components/chat/TeacherChatInterface";
+import InventoryManagement from "../dashboard/InventoryManagement"; // Corrected import path
 import {
   Users,
   ClipboardCheck,
@@ -25,6 +26,7 @@ import {
   BookOpen,
   Brain,
   Target,
+  Package, // NEW IMPORT
 } from "lucide-react";
 import logo from "../assets/logo.png";
 import {
@@ -91,6 +93,7 @@ const HeadteacherDashboard = () => {
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "resource", label: "Resource Management", icon: FileText },
     { id: "finance", label: "Finance", icon: Banknote },
+    { id: "inventory", label: "Inventory Management", icon: Package }, // NEW TAB
     { id: "timetable", label: "Timetable Oversight", icon: CalendarDays },
     { id: "leave", label: "Leave Management", icon: ClipboardCheck },
     { id: "evaluation", label: "Teacher Evaluation", icon: BookOpen },
@@ -290,6 +293,7 @@ const HeadteacherDashboard = () => {
         {/* PANELS */}
         {tab === "resource" && <ResourceApprovalPanel />}
         {tab === "finance" && <FinancePanel />}
+        {tab === "inventory" && <InventoryManagement />} {/* Render InventoryManagement component */}
         {tab === "timetable" && <TimetableApprovalPanel />}
         {tab === "leave" && <LeaveApprovalPanel />}
         {tab === "evaluation" && <TeacherEvaluationPanel />}
