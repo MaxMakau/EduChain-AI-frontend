@@ -12,20 +12,20 @@ const ResourceMgmt = () => {
   const { user, role } = useAuth(); // Get user and role from AuthContext
   const [showRequestForm, setShowRequestForm] = useState(false);
 
-  useEffect(() => {
-    const fetchResourceRequests = async () => {
-      try {
-        setIsLoading(true);
-        const response = await axiosInstance.get('/schools/resources/');
-        setResourceRequests(response.data);
-      } catch (err) {
-        console.error("Failed to fetch resource requests:", err);
-        setError(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const fetchResourceRequests = async () => {
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.get('/schools/resources/');
+      setResourceRequests(response.data);
+    } catch (err) {
+      console.error("Failed to fetch resource requests:", err);
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchResourceRequests();
   }, []);
 
