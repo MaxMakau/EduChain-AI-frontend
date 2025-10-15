@@ -1,220 +1,185 @@
+// src/dashboard/CountyOverview.js
 import React from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import { motion } from "framer-motion";
 import {
   Users,
   School,
   ClipboardList,
   Activity,
-  Accessibility,
-  PieChart,
+  PieChart as PieIcon,
   BarChart2,
-  AlertCircle,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  Legend,
-} from "recharts";
 
 const CountyOverview = ({ data }) => {
-  if (!data) {
+  if (!data || Object.keys(data).length === 0) {
     return (
-      <div className="bg-white/60 backdrop-blur-md rounded-2xl p-8 shadow-sm border border-gray-100 text-center text-gray-500 animate-pulse">
-        Loading county overview...
+      <div className="bg-white rounded-2xl p-6 shadow-sm text-center text-gray-500">
+        Loading overview...
       </div>
     );
   }
 
-  const {
-    total_students = 0,
-    active_teachers = 0,
-    schools_managed = 0,
-    attendance_rate = 0,
-    gender_distribution = { female: 0, male: 0 },
-    assessment_performance = [],
-    resource_requests = [],
-    schools_per_subcounty = [],
-    pwd_overview = { total_pwd: 0, top_disabilities: [] },
-  } = data;
+  // --- Transform data ---
+  const subcountyData = Object.entries(data.schools_per_subcounty || {}).map(
+    ([name, value]) => ({ name, schools: value })
+  );
 
-  const assessmentChartData =
-    assessment_performance.length > 0
-      ? assessment_performance
-      : [
-          { subject: "Mathematics", score: 0 },
-          { subject: "English", score: 0 },
-          { subject: "Science", score: 0 },
-        ];
+  const genderData = data.students?.by_gender
+    ? Object.entries(data.students.by_gender).map(([key, val]) => ({
+        name: key === "M" ? "Male" : "Female",
+        value: val,
+      }))
+    : [];
 
-  const subcountyChartData =
-    schools_per_subcounty.length > 0
-      ? schools_per_subcounty
-      : [
-          { subcounty: "Makadara", schools: 0 },
-          { subcounty: "Roysambu", schools: 0 },
-          { subcounty: "Starehe", schools: 0 },
-        ];
+  const disabilityData = data.students?.by_disability_type
+    ? Object.entries(data.students.by_disability_type).map(([key, val]) => ({
+        name: key,
+        value: val,
+      }))
+    : [];
 
-  const stats = [
-    {
-      label: "Total Students",
-      value: total_students,
-      icon: Users,
-      color: "#3B82F6",
-      gradient: "from-blue-50 to-white",
-    },
-    {
-      label: "Active Teachers",
-      value: active_teachers,
-      icon: ClipboardList,
-      color: "#2563EB",
-      gradient: "from-indigo-50 to-white",
-    },
-    {
-      label: "Schools Managed",
-      value: schools_managed,
-      icon: School,
-      color: "#0E7490",
-      gradient: "from-cyan-50 to-white",
-    },
-    {
-      label: "Attendance Rate",
-      value: `${attendance_rate}%`,
-      icon: Activity,
-      color: "#059669",
-      gradient: "from-emerald-50 to-white",
-    },
-  ];
+  // --- Chart Colors (EduChain palette) ---
+  const COLORS = ["#2772A0", "#CCDDEA", "#4C9ED9", "#A8CDE8", "#1E4F73"];
+
+  // --- Motion Config ---
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (i) => ({
+      opacity: 1,
+      y: 0,
+      transition: { delay: i * 0.1, duration: 0.5 },
+    }),
+  };
 
   return (
-    <section className="space-y-10">
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map(({ label, value, icon: Icon, color, gradient }) => (
-          <div
+    <motion.section
+      className="space-y-10 bg-gradient-to-b from-[#CCDDEA]/30 to-white p-4 md:p-8 rounded-3xl"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        {[
+          { label: "Schools", value: data.schools, icon: School, color: "#2772A0" },
+          { label: "Teachers", value: data.teachers, icon: Users, color: "#4C9ED9" },
+          { label: "Students", value: data.students?.total, icon: ClipboardList, color: "#1E4F73" },
+          {
+            label: "Attendance Rate",
+            value: `${data.attendance?.attendance_percentage || 0}%`,
+            icon: Activity,
+            color: "#A8CDE8",
+          },
+          {
+            label: "Pending Requests",
+            value: data.resource_requests?.pending,
+            icon: BarChart2,
+            color: "#2772A0",
+          },
+        ].map(({ label, value, icon: Icon, color }, i) => (
+          <motion.div
             key={label}
-            className={`bg-gradient-to-b ${gradient} rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition-shadow duration-300`}
+            custom={i}
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            className="bg-white/90 border border-[#CCDDEA] rounded-2xl shadow-md p-5 flex flex-col justify-center items-center hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
           >
-            <div className="flex items-center justify-between">
-              <Icon className="mb-3" color={color} size={26} />
-            </div>
-            <h3 className="text-gray-600 text-sm tracking-wide">{label}</h3>
-            <p className="text-3xl font-semibold text-[#1E293B] mt-1">{value}</p>
-          </div>
+            <Icon size={28} color={color} className="mb-3" />
+            <p className="text-gray-600 text-sm">{label}</p>
+            <h3 className="text-2xl font-bold text-[#1E293B] mt-1">{value}</h3>
+          </motion.div>
         ))}
       </div>
 
       {/* Gender Distribution */}
-      <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-[#1E293B] mb-4 flex items-center gap-2">
-          <PieChart size={20} className="text-[#2772A0]" /> Student Gender Distribution
+      <motion.div
+        className="bg-white/90 border border-[#CCDDEA] rounded-2xl shadow-md p-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <h3 className="text-lg font-semibold text-[#2772A0] mb-4 flex items-center gap-2">
+          <PieIcon size={20} className="text-[#2772A0]" /> Gender Distribution
         </h3>
-        <div className="flex flex-col sm:flex-row justify-around text-center">
-          <div className="flex flex-col items-center">
-            <p className="text-gray-600 text-sm">Female</p>
-            <p className="text-3xl font-bold text-pink-600 mt-1">
-              {gender_distribution.female}
-            </p>
-          </div>
-          <div className="flex flex-col items-center">
-            <p className="text-gray-600 text-sm">Male</p>
-            <p className="text-3xl font-bold text-blue-600 mt-1">
-              {gender_distribution.male}
-            </p>
-          </div>
+        <div className="h-64 flex justify-center">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={genderData}
+                dataKey="value"
+                nameKey="name"
+                outerRadius={100}
+                label
+              >
+                {genderData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Assessment Performance */}
-      <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-[#1E293B] mb-4 flex items-center gap-2">
-          <BarChart2 size={20} className="text-[#2772A0]" /> Assessment Performance (%)
+      {/* Disability Distribution */}
+      <motion.div
+        className="bg-white/90 border border-[#CCDDEA] rounded-2xl shadow-md p-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <h3 className="text-lg font-semibold text-[#2772A0] mb-4 flex items-center gap-2">
+          <ClipboardList size={20} className="text-[#2772A0]" /> Disability Distribution
         </h3>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={assessmentChartData}>
+            <BarChart data={disabilityData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="subject" stroke="#6B7280" />
+              <XAxis dataKey="name" stroke="#6B7280" />
               <YAxis stroke="#6B7280" />
               <Tooltip />
-              <Legend />
-              <Bar dataKey="score" fill="#2772A0" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="value" fill="#2772A0" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </motion.div>
 
       {/* Schools per Subcounty */}
-      <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-[#1E293B] mb-4 flex items-center gap-2">
-          <School size={20} className="text-[#2772A0]" /> Schools per Subcounty
+      <motion.div
+        className="bg-white/90 border border-[#CCDDEA] rounded-2xl shadow-md p-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <h3 className="text-lg font-semibold text-[#2772A0] mb-4 flex items-center gap-2">
+          <BarChart2 size={20} className="text-[#2772A0]" /> Schools per Subcounty
         </h3>
-        <div className="h-64">
+        <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={subcountyChartData}>
+            <BarChart data={subcountyData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="subcounty" stroke="#6B7280" />
+              <XAxis dataKey="name" stroke="#6B7280" />
               <YAxis stroke="#6B7280" />
               <Tooltip />
-              <Bar dataKey="schools" fill="#0E7490" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="schools" fill="#4C9ED9" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
-
-      {/* PWD Overview */}
-      <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-[#1E293B] mb-4 flex items-center gap-2">
-          <Accessibility size={20} className="text-[#2772A0]" /> Students with Disabilities (PWD)
-        </h3>
-        <p className="text-gray-600 mb-3">
-          <span className="font-semibold">{pwd_overview.total_pwd}</span> total PWD students.
-        </p>
-        {pwd_overview.top_disabilities?.length > 0 ? (
-          <ul className="divide-y divide-gray-100">
-            {pwd_overview.top_disabilities.map((d, idx) => (
-              <li
-                key={idx}
-                className="py-2 flex justify-between text-sm text-gray-700"
-              >
-                <span className="capitalize">{d.type}</span>
-                <span className="font-medium">{d.count}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-gray-500 text-sm flex items-center gap-1">
-            <AlertCircle size={16} /> No disability data available.
-          </p>
-        )}
-      </div>
-
-      {/* Pending Resources */}
-      <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100 shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-[#1E293B] mb-3 flex items-center gap-2">
-          <ClipboardList size={20} className="text-[#2772A0]" /> Pending Resource Requests
-        </h3>
-        {resource_requests.length > 0 ? (
-          <ul className="divide-y divide-gray-100">
-            {resource_requests.map((req, idx) => (
-              <li
-                key={idx}
-                className="py-3 text-sm text-gray-700 flex justify-between"
-              >
-                <span>{req.school_name}</span>
-                <span className="text-gray-500">{req.request_type}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-gray-500 text-sm">No pending requests.</p>
-        )}
-      </div>
-    </section>
+      </motion.div>
+    </motion.section>
   );
 };
 
