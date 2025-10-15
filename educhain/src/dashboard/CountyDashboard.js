@@ -52,9 +52,9 @@ const endpoints = {
   overview: "/reports/dashboard/county/",
   schools: "/schools/all/",
   students: "/students/all/",
-  assessments: "/reports/assessments/summary/",
+  assessments: "/students/assessments/averages/school/",
   resources: "/schools/resources/",
-  "ai-analytics": "/reports/ai/analytics/",
+  "ai-analytics": "/reports/analytics/",
 };
 
 // Small shimmer for loading
