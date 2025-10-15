@@ -16,6 +16,13 @@ const InventoryManagement = ({ dashboardData: propDashboardData }) => {
 
   const schoolId = user?.managed_school?.id || user?.school?.id || dashboardData?.school_id;
 
+  console.log("InventoryManagement: User:", user);
+  console.log("InventoryManagement: Role:", role);
+  console.log("InventoryManagement: Prop DashboardData:", propDashboardData);
+  console.log("InventoryManagement: Outlet Context:", outletContext);
+  console.log("InventoryManagement: Resolved DashboardData:", dashboardData);
+  console.log("InventoryManagement: Derived School ID:", schoolId);
+
   useEffect(() => {
     const fetchInventoryData = async () => {
       if (!schoolId) {
@@ -87,7 +94,8 @@ const handleSave = async () => {
   }
 
   if (error) {
-    return <div className="p-8 text-center text-red-500 font-bold">Error: {error.message}</div>;
+    const errorMessage = error.response?.data?.detail || error.message || 'An unknown error occurred.';
+    return <div className="p-8 text-center text-red-500 font-bold">Error: {errorMessage}</div>;
   }
 
   if (!inventory) {

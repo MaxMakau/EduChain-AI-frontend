@@ -1,16 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../api/axiosInstance';
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 const TimetableApprovalPanel = () => {
   const [timetables, setTimetables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { user } = useAuth(); // Get user from AuthContext
 
   useEffect(() => {
     async function fetchTimetables() {
+      const schoolId = user?.managed_school?.id; // Get schoolId from managed_school
+      if (!schoolId) {
+        setError('School ID not found. Headteacher must manage a school.');
+        setLoading(false);
+        return;
+      }
       try {
-        // Replace '1' with school id from context if available
-        const res = await axiosInstance.get('/schools/timetable/1/');
+        const res = await axiosInstance.get(`/schools/timetable/${schoolId}/`); // Use dynamic schoolId
         setTimetables(res.data.schedules || []);
       } catch (err) {
         setError('Failed to fetch timetables.');
@@ -19,11 +26,11 @@ const TimetableApprovalPanel = () => {
       }
     }
     fetchTimetables();
-  }, []);
+  }, [user]); // Add user as a dependency
 
   const handleStatus = async (id, status) => {
     try {
-      await axiosInstance.put(`/schools/timetable/${id}/`, { status });
+      await axiosInstance.patch(`/schools/timetable/${id}/`, { status }); // Use patch
       setTimetables(timetables.map(t => t.id === id ? { ...t, status } : t));
     } catch {
       setError('Failed to update timetable status.');
@@ -36,7 +43,12 @@ const TimetableApprovalPanel = () => {
   return (
     <div className="card" style={{maxWidth: 600, margin: '0 auto'}}>
       <h3>Timetable Oversight</h3>
-      {timetables.length === 0 ? <div>No timetables found.</div> : (
+      {timetables.length === 0 ? 
+        <div className="text-center p-4 text-gray-600">
+          <p>No timetables have been added for your school.</p>
+          <p className="mt-2">Please encourage your school teachers to update/submit their timetables and duty rosters.</p>
+        </div> 
+        : (
         <table style={{width: '100%', marginTop: 10}}>
           <thead>
             <tr>
