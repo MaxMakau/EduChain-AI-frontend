@@ -6,11 +6,13 @@ const TimetableApprovalPanel = () => {
   const [timetables, setTimetables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { user } = useAuth(); // Get user from AuthContext
+  const { user, isLoading: authLoading } = useAuth(); // Get isLoading from useAuth
 
   useEffect(() => {
     async function fetchTimetables() {
-      const schoolId = user?.managed_school?.id; // Get schoolId from managed_school
+      if (authLoading) return; // Wait for auth to load
+
+      const schoolId = user?.managed_school?.id || user?.school; // Corrected: user?.school instead of user?.school?.id
       if (!schoolId) {
         setError('School ID not found. Headteacher must manage a school.');
         setLoading(false);
@@ -26,7 +28,7 @@ const TimetableApprovalPanel = () => {
       }
     }
     fetchTimetables();
-  }, [user]); // Add user as a dependency
+  }, [user, authLoading]); // Add authLoading as a dependency
 
   const handleStatus = async (id, status) => {
     try {

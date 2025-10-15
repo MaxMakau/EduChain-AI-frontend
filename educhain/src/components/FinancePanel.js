@@ -2,17 +2,27 @@ import React, { useEffect, useState } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import FinanceFormModal from './FinanceFormModal';
 import './FinancePanel.css';
+import { useAuth } from '../context/AuthContext'; // NEW IMPORT
 
 const FinancePanel = () => {
   const [financeRecords, setFinanceRecords] = useState([]); // Changed to an array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [schoolId, setSchoolId] = useState(1); // Assuming a default or fetching from context
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentFinanceRecord, setCurrentFinanceRecord] = useState(null); // For editing or creating
+  
+  const { user, isLoading: authLoading } = useAuth(); // Get user and authLoading from AuthContext
+  const schoolId = user?.managed_school?.id || user?.school; // Dynamically get schoolId
 
   useEffect(() => {
     async function fetchFinanceRecords() {
+      if (authLoading) return; // Wait for auth to load
+
+      if (!schoolId) {
+        setError('School ID not found. Ensure user is assigned to a school or manages one.');
+        setLoading(false);
+        return;
+      }
       try {
         // Updated endpoint to fetch all records for the school
         const res = await axiosInstance.get(`/schools/finance/all/?school__id=${schoolId}`);
@@ -31,7 +41,7 @@ const FinancePanel = () => {
       }
     }
     fetchFinanceRecords();
-  }, [schoolId]);
+  }, [schoolId, user, authLoading]); // Add schoolId, user, and authLoading as dependencies
 
   const handleOpenCreateModal = () => {
     setCurrentFinanceRecord(null); // Clear previous data for new record

@@ -10,23 +10,19 @@ const InventoryManagement = ({ dashboardData: propDashboardData }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedInventory, setEditedInventory] = useState(null);
   
-  const { user, role } = useAuth();
+  const { user, role, isLoading: authLoading } = useAuth(); // Get isLoading from useAuth
   const outletContext = useOutletContext();
   const dashboardData = propDashboardData || outletContext?.dashboardData; // Use prop or outlet context
 
-  const schoolId = user?.managed_school?.id || user?.school?.id || dashboardData?.school_id;
-
-  console.log("InventoryManagement: User:", user);
-  console.log("InventoryManagement: Role:", role);
-  console.log("InventoryManagement: Prop DashboardData:", propDashboardData);
-  console.log("InventoryManagement: Outlet Context:", outletContext);
-  console.log("InventoryManagement: Resolved DashboardData:", dashboardData);
-  console.log("InventoryManagement: Derived School ID:", schoolId);
+  // Refined schoolId derivation based on console logs
+  const schoolId = user?.managed_school?.id || user?.school || dashboardData?.school_id; // Corrected: user?.school instead of user?.school?.id
 
   useEffect(() => {
     const fetchInventoryData = async () => {
+      if (authLoading) return; // Wait for auth to load
+
       if (!schoolId) {
-        setError("School ID not found.");
+        setError("School ID not found. Ensure user is assigned to a school or manages one.");
         setIsLoading(false);
         return;
       }
@@ -44,7 +40,7 @@ const InventoryManagement = ({ dashboardData: propDashboardData }) => {
     };
 
     fetchInventoryData();
-  }, [schoolId]);
+  }, [schoolId, authLoading, user]); // Add authLoading and user as dependencies
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
