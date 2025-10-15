@@ -24,6 +24,7 @@ import SchoolsList from './dashboard/SchoolsList';
 import StudentData from './dashboard/StudentData';
 import Assessments from './dashboard/Assessments';
 import ResourceMgmt from './dashboard/ResourceMgmt';
+import InventoryManagement from './dashboard/InventoryManagement'; // NEW IMPORT
 import AIAnalytics from './dashboard/AIAnalytics';
 
 // Note: You'll need to create OfficerDashboard.js and StudentDashboard.js placeholders
@@ -57,7 +58,9 @@ function App() {
           <Route 
             path="/dashboard/headteacher" 
             element={<ProtectedRoute requiredRole="HEADTEACHER"><HeadteacherDashboard /></ProtectedRoute>} 
-          />
+          >
+            <Route path="inventory" element={<InventoryManagement />} /> {/* NEW ROUTE for Headteacher */}
+          </Route>
           {/* County Officer Dashboard with nested routes */}
           <Route path="/dashboard/officer" element={<ProtectedRoute requiredRole="OFFICER"><CountyDashboard /></ProtectedRoute>}>
             <Route index element={<CountyOverview />} />
@@ -65,6 +68,7 @@ function App() {
             <Route path="students" element={<StudentData />} />
             <Route path="assessments" element={<Assessments />} />
             <Route path="resources" element={<ResourceMgmt />} />
+            <Route path="inventory" element={<InventoryManagement />} /> {/* NEW ROUTE for Officer */}
             <Route path="ai-analytics" element={<AIAnalytics />} />
           </Route>
 

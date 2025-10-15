@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import { useOutletContext } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // Import useAuth
+import ResourceRequestForm from '../components/ResourceRequestForm'; // Assuming you have this component
 
 const ResourceMgmt = () => {
   const [resourceRequests, setResourceRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const { dashboardData } = useOutletContext();
+  const { user, role } = useAuth(); // Get user and role from AuthContext
+  const [showRequestForm, setShowRequestForm] = useState(false);
 
   useEffect(() => {
     const fetchResourceRequests = async () => {
@@ -49,6 +53,26 @@ const ResourceMgmt = () => {
       <h2 className="text-2xl font-bold text-gray-800 mb-4">Resource Management ({resourceRequests.length})</h2>
       <p className="text-gray-600">This page displays and allows management of resource requests from schools.</p>
 
+      {role === "HEADTEACHER" && (
+        <button
+          onClick={() => setShowRequestForm(true)}
+          className="mb-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+        >
+          Create New Request
+        </button>
+      )}
+
+      {/* Resource Request Form Modal */}
+      {showRequestForm && (
+        <ResourceRequestForm
+          onClose={() => setShowRequestForm(false)}
+          onSuccess={() => {
+            setShowRequestForm(false);
+            fetchResourceRequests(); // Refresh the list after successful submission
+          }}
+        />
+      )}
+
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {resourceRequests.map(request => (
           <div key={request.id} className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200">
@@ -58,6 +82,13 @@ const ResourceMgmt = () => {
             <p className="text-sm text-gray-600">Requested by: {request.requested_by}</p>
             <p className="text-sm text-gray-600">Description: {request.description}</p>
             <p className="text-sm text-gray-600">Created At: {new Date(request.created_at).toLocaleDateString()}</p>
+            
+            {role === "OFFICER" && (
+              <div className="mt-4 flex space-x-2">
+                <button className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">Approve</button>
+                <button className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600">Reject</button>
+              </div>
+            )}
           </div>
         ))}
       </div>
