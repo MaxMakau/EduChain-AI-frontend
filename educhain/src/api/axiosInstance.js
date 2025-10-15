@@ -106,4 +106,15 @@ axiosInstance.interceptors.response.use(
 );
 
 
+export const startPolling = () => {
+  setInterval(async () => {
+    try {
+      await axios.get(`${API_URL}/schema/redoc`);
+      console.log('Ping successful, server is awake!');
+    } catch (error) {
+      console.error('Ping failed:', error);
+    }
+  }, 10 * 60 * 1000); // Every 10 minutes
+};
+
 export default axiosInstance;
