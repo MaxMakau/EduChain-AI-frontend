@@ -293,7 +293,7 @@ const HeadteacherDashboard = () => {
         {/* PANELS */}
         {tab === "resource" && <ResourceApprovalPanel />}
         {tab === "finance" && <FinancePanel />}
-        {tab === "inventory" && <InventoryManagement />} {/* Render InventoryManagement component */}
+        {tab === "inventory" && <InventoryManagement dashboardData={data} />} {/* Pass dashboardData as prop */}
         {tab === "timetable" && <TimetableApprovalPanel />}
         {tab === "leave" && <LeaveApprovalPanel />}
         {tab === "evaluation" && <TeacherEvaluationPanel />}

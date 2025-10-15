@@ -3,7 +3,7 @@ import { getInventory, updateInventory } from '../api/inventory';
 import { useAuth } from '../context/AuthContext';
 import { useOutletContext } from 'react-router-dom'; // Assuming dashboard uses outlet context
 
-const InventoryManagement = () => {
+const InventoryManagement = ({ dashboardData: propDashboardData }) => {
   const [inventory, setInventory] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -11,9 +11,10 @@ const InventoryManagement = () => {
   const [editedInventory, setEditedInventory] = useState(null);
   
   const { user, role } = useAuth();
-  const { dashboardData } = useOutletContext(); // Assuming schoolId might be in dashboardData or user context
+  const outletContext = useOutletContext();
+  const dashboardData = propDashboardData || outletContext?.dashboardData; // Use prop or outlet context
 
-  const schoolId = user?.managed_school?.id || user?.school?.id;
+  const schoolId = user?.managed_school?.id || user?.school?.id || dashboardData?.school_id;
 
   useEffect(() => {
     const fetchInventoryData = async () => {
