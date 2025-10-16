@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axiosInstance from '../api/axiosInstance';
 
 const AIAnalytics = () => {
+  console.log("AIAnalytics component rendered");
   const [insights, setInsights] = useState([]);
   const [rules, setRules] = useState({}); // Keep rules state for potential future use, but not displayed as raw JSON
   const [isLoadingInsights, setIsLoadingInsights] = useState(true);
@@ -19,8 +20,10 @@ const AIAnalytics = () => {
     const fetchInsights = async () => {
       try {
         setIsLoadingInsights(true);
+        console.log("Fetching AI insights...");
         const response = await axiosInstance.get('/reports/analytics/');
         setInsights(response.data);
+        console.log("AI insights fetched successfully:", response.data);
       } catch (err) {
         console.error("Failed to fetch AI insights:", err);
         setErrorInsights(err);
@@ -32,8 +35,10 @@ const AIAnalytics = () => {
     const fetchRules = async () => {
       try {
         setIsLoadingRules(true);
+        console.log("Fetching analytics rules...");
         const response = await axiosInstance.get('/analytics/rules/');
         setRules(response.data);
+        console.log("Analytics rules fetched successfully:", response.data);
       } catch (err) {
         console.error("Failed to fetch analytics rules:", err);
         setErrorRules(err);
