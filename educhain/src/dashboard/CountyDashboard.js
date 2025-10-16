@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import CountyOverview from "./CountyOverview";
 import logo from "../assets/logo.png";
+import AIAnalytics from "./AIAnalytics";
 import {
   ResponsiveContainer,
   LineChart,
@@ -54,7 +55,6 @@ const endpoints = {
   students: "/students/all/",
   assessments: "/students/assessments/averages/school/",
   resources: "/schools/resources/",
-  "ai-analytics": "/reports/analytics/",
 };
 
 // Small shimmer for loading
@@ -384,24 +384,7 @@ export default function CountyDashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
-                  <h3 className="text-lg font-semibold text-[#2772A0] mb-4">
-                    AI Analytics
-                  </h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={data["ai-analytics"]?.trend ?? []}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis dataKey="name" stroke="#9CA3AF" />
-                      <YAxis stroke="#9CA3AF" />
-                      <Tooltip />
-                      <Line
-                        type="monotone"
-                        dataKey="score"
-                        stroke={COLORS.oceanBlue}
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <AIAnalytics />
                 </motion.section>
               )}
             </AnimatePresence>

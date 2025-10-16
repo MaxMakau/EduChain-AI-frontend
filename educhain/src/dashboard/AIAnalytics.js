@@ -12,6 +12,8 @@ const AIAnalytics = () => {
   const [sortOrder, setSortOrder] = useState('desc'); // Default order
   const [filterSeverity, setFilterSeverity] = useState('ALL'); // Filter by severity
   const [filterStatus, setFilterStatus] = useState('ACTIVE'); // Filter by status
+  const [isFetchingLatest, setIsFetchingLatest] = useState(false); // New state for loading latest insights
+  const token = localStorage.getItem("access_token"); // Get token for API calls
 
   useEffect(() => {
     const fetchInsights = async () => {
@@ -43,6 +45,28 @@ const AIAnalytics = () => {
     fetchInsights();
     fetchRules(); // Still fetch rules in case they are needed for future UI
   }, []);
+
+  const handleGetLatestInsights = async () => {
+    setIsFetchingLatest(true);
+    setErrorInsights(null); // Clear previous errors
+    try {
+      // Step 1: Trigger the analytics run
+      await axiosInstance.post('/analytics/run/', {}, {
+        headers: { Authorization: token ? `Bearer ${token}` : undefined },
+      });
+
+      // Step 2: Fetch the updated insights after the run
+      const response = await axiosInstance.get('/reports/analytics/', {
+        headers: { Authorization: token ? `Bearer ${token}` : undefined },
+      });
+      setInsights(response.data);
+    } catch (err) {
+      console.error("Failed to get latest AI insights:", err);
+      setErrorInsights(err);
+    } finally {
+      setIsFetchingLatest(false);
+    }
+  };
 
   // Filter and Sort Logic
   const filteredAndSortedInsights = [...insights]
@@ -103,7 +127,16 @@ const AIAnalytics = () => {
 
   return (
     <div className="p-6 bg-white rounded-xl shadow-lg">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">AI Analytics & Insights</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-gray-800">AI Analytics & Insights</h2>
+        <button
+          onClick={handleGetLatestInsights}
+          disabled={isFetchingLatest}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+        >
+          {isFetchingLatest ? 'Fetching...' : 'Get Latest Insights'}
+        </button>
+      </div>
       
       <div className="mt-6">
         <h3 className="text-xl font-semibold text-gray-700 mb-3">Filters & Sorting</h3>
