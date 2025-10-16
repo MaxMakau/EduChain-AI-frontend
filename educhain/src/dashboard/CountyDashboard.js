@@ -7,6 +7,8 @@ import {
   School,
   ClipboardList,
   TrendingUp,
+  ChevronDown, // New import
+  ChevronUp, // New import
   Menu,
   X,
   LogOut,
@@ -102,6 +104,7 @@ export default function CountyDashboard() {
   const [error, setError] = useState("");
   const [data, setData] = useState({});
   const [search, setSearch] = useState("");
+  const [expandedRows, setExpandedRows] = useState([]); // New state for expanded rows
   const navigate = useNavigate();
   const location = useLocation(); // Get current location
   const token = localStorage.getItem("access_token");
@@ -168,6 +171,12 @@ export default function CountyDashboard() {
   const studentsRows = data.students?.results || data.students || [];
   const assessmentsRows = data.assessments?.results || data.assessments || [];
   const resourcesRows = data.resources?.results || data.resources || [];
+
+  const toggleRowExpansion = (rowId) => {
+    setExpandedRows(prev =>
+      prev.includes(rowId) ? prev.filter(id => id !== rowId) : [...prev, rowId]
+    );
+  };
 
   const handleResourceAction = async (resourceId, status) => {
     try {
@@ -359,37 +368,47 @@ export default function CountyDashboard() {
                   <h3 className="text-lg font-semibold text-[#2772A0] mb-4">Resources</h3>
                   <Table
                     columns={[
-                      { key: "title", title: "Title" },
                       { key: "school", title: "School" },
+                      { key: "resource_type", title: "Request Type" },
+                      { key: "quantity", title: "Quantity" },
                       { key: "status", title: "Status" },
-                      {
-                        key: "requested_by",
-                        title: "Requested By",
-                        render: (row) => row.requested_by ? row.requested_by.split(' ')[0] + " " + row.requested_by.split(' ')[1].charAt(0) + "." : "N/A"
-                      },
+                      { key: "requested_by", title: "Requested By", render: (row) => row.requested_by ? row.requested_by.split(' ')[0] + " " + row.requested_by.split(' ')[1].charAt(0) + "." : "N/A" },
+                      { key: "created_at", title: "Requested At", render: (row) => new Date(row.created_at).toLocaleDateString() },
                       {
                         key: "actions",
                         title: "Actions",
-                        render: (row) => (
-                          <div className="flex gap-2">
-                            {row.status === "PENDING" && (
-                              <>
-                                <button
-                                  onClick={() => handleResourceAction(row.id, "APPROVED")}
-                                  className="px-3 py-1 text-sm rounded-md bg-green-500 text-white hover:bg-green-600"
-                                >
-                                  Approve
-                                </button>
-                                <button
-                                  onClick={() => handleResourceAction(row.id, "REJECTED")}
-                                  className="px-3 py-1 text-sm rounded-md bg-red-500 text-white hover:bg-red-600"
-                                >
-                                  Reject
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        ),
+                        render: (row) => {
+                          const isExpanded = expandedRows.includes(row.id);
+                          return (
+                            <div className="flex flex-col items-start">
+                              <button onClick={() => toggleRowExpansion(row.id)} className="flex items-center text-blue-600 hover:text-blue-800">
+                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                <span className="ml-1">Details</span>
+                              </button>
+                              {isExpanded && (
+                                <div className="mt-2 p-3 bg-gray-50 rounded-md shadow-inner w-full">
+                                  <p className="text-xs text-gray-700 mb-2"><strong>Description:</strong> {row.description}</p>
+                                  {row.status === "PENDING" && (
+                                    <div className="flex gap-2 mt-2">
+                                      <button
+                                        onClick={() => handleResourceAction(row.id, "APPROVED")}
+                                        className="px-3 py-1 text-xs rounded-md bg-green-500 text-white hover:bg-green-600"
+                                      >
+                                        Approve
+                                      </button>
+                                      <button
+                                        onClick={() => handleResourceAction(row.id, "REJECTED")}
+                                        className="px-3 py-1 text-xs rounded-md bg-red-500 text-white hover:bg-red-600"
+                                      >
+                                        Reject
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        },
                       },
                     ]}
                     rows={resourcesRows}
