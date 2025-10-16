@@ -240,7 +240,7 @@ export default function CountyDashboard() {
                     onClick={() => {
                       setActiveTab(t.id);
                       setIsSidebarOpen(false);
-                      navigate(t.id);
+                      navigate(`/dashboard/officer/${t.id}`);
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-sm transition ${
                       active ? "bg-[#2772A0] text-white shadow-md" : "text-gray-700 hover:bg-gray-50"
