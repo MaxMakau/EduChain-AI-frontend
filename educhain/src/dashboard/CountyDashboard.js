@@ -169,6 +169,23 @@ export default function CountyDashboard() {
   const assessmentsRows = data.assessments?.results || data.assessments || [];
   const resourcesRows = data.resources?.results || data.resources || [];
 
+  const handleResourceAction = async (resourceId, status) => {
+    try {
+      setLoading(true);
+      setError("");
+      await axiosInstance.patch(`/schools/resources/${resourceId}/`, { status }, {
+        headers: { Authorization: token ? `Bearer ${token}` : undefined },
+      });
+      // After successful update, re-fetch resources data to reflect the changes
+      await fetchTabData("resources");
+    } catch (err) {
+      console.error("Failed to update resource status:", err);
+      setError(err.response?.data?.detail || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       const refreshToken = localStorage.getItem("refresh_token");
@@ -345,7 +362,35 @@ export default function CountyDashboard() {
                       { key: "title", title: "Title" },
                       { key: "school", title: "School" },
                       { key: "status", title: "Status" },
-                      { key: "requested_by", title: "Requested By" },
+                      {
+                        key: "requested_by",
+                        title: "Requested By",
+                        render: (row) => row.requested_by ? row.requested_by.split(' ')[0] + " " + row.requested_by.split(' ')[1].charAt(0) + "." : "N/A"
+                      },
+                      {
+                        key: "actions",
+                        title: "Actions",
+                        render: (row) => (
+                          <div className="flex gap-2">
+                            {row.status === "PENDING" && (
+                              <>
+                                <button
+                                  onClick={() => handleResourceAction(row.id, "APPROVED")}
+                                  className="px-3 py-1 text-sm rounded-md bg-green-500 text-white hover:bg-green-600"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleResourceAction(row.id, "REJECTED")}
+                                  className="px-3 py-1 text-sm rounded-md bg-red-500 text-white hover:bg-red-600"
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        ),
+                      },
                     ]}
                     rows={resourcesRows}
                   />
