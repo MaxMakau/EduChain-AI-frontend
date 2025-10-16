@@ -13,7 +13,7 @@ import {
   Search,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import CountyOverview from "./CountyOverview";
 import logo from "../assets/logo.png";
@@ -55,6 +55,7 @@ const endpoints = {
   students: "/students/all/",
   assessments: "/students/assessments/averages/school/",
   resources: "/schools/resources/",
+  ai_analytics: "/reports/analytics/",
 };
 
 // Small shimmer for loading
@@ -106,6 +107,7 @@ export default function CountyDashboard() {
   const [data, setData] = useState({});
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const location = useLocation(); // Get current location
   const token = localStorage.getItem("access_token");
 
   const sidebarRef = useRef(null);
@@ -145,9 +147,26 @@ export default function CountyDashboard() {
   };
 
   useEffect(() => {
+    // Extract the tab from the URL pathname
+    const pathSegments = location.pathname.split('/');
+    const currentTab = pathSegments[pathSegments.length - 1];
+    if (tabs.some(tab => tab.id === currentTab) && currentTab !== activeTab) {
+      setActiveTab(currentTab);
+    } else if (!tabs.some(tab => tab.id === currentTab) && activeTab !== "overview") {
+      // Default to overview if no matching tab is found in URL and not already on overview
+      setActiveTab("overview");
+    }
+
+    // Fetch data for the active tab (either from URL or default)
+    if (activeTab === "ai-analytics") {
+      // AIAnalytics component handles its own data fetching
+      setLoading(false);
+      return;
+    }
     fetchTabData(activeTab);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, [activeTab, location.pathname]); // Depend on activeTab and location.pathname
 
   const schoolsRows = data.schools?.results || data.schools || [];
   const studentsRows = data.students?.results || data.students || [];
@@ -199,6 +218,7 @@ export default function CountyDashboard() {
                     onClick={() => {
                       setActiveTab(t.id);
                       setIsSidebarOpen(false);
+                      navigate(t.id);
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-sm transition ${
                       active ? "bg-[#2772A0] text-white shadow-md" : "text-gray-700 hover:bg-gray-50"
