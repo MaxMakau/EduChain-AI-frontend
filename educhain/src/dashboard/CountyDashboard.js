@@ -149,7 +149,11 @@ export default function CountyDashboard() {
     // Extract the tab from the URL pathname
     const pathSegments = location.pathname.split('/');
     const currentTab = pathSegments[pathSegments.length - 1];
-    if (tabs.some(tab => tab.id === currentTab) && currentTab !== activeTab) {
+
+    // Handle the base path for overview explicitly
+    if (location.pathname === "/dashboard/officer" && activeTab !== "overview") {
+      setActiveTab("overview");
+    } else if (tabs.some(tab => tab.id === currentTab) && currentTab !== activeTab) {
       setActiveTab(currentTab);
     } else if (!tabs.some(tab => tab.id === currentTab) && activeTab !== "overview") {
       // Default to overview if no matching tab is found in URL and not already on overview
@@ -240,7 +244,7 @@ export default function CountyDashboard() {
                     onClick={() => {
                       setActiveTab(t.id);
                       setIsSidebarOpen(false);
-                      navigate(`/dashboard/officer/${t.id}`);
+                      navigate(t.id === "overview" ? "/dashboard/officer" : `/dashboard/officer/${t.id}`);
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-sm transition ${
                       active ? "bg-[#2772A0] text-white shadow-md" : "text-gray-700 hover:bg-gray-50"
