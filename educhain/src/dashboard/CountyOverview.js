@@ -8,9 +8,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import { motion } from "framer-motion";
 import {
@@ -21,6 +18,8 @@ import {
   PieChart as PieIcon,
   BarChart2,
   Sparkles,
+  User,
+  UserCheck,
 } from "lucide-react";
 
 const CountyOverview = ({ data }) => {
@@ -32,29 +31,29 @@ const CountyOverview = ({ data }) => {
     );
   }
 
-  // --- Data Preparation ---
+  // --- Data prep ---
   const subcountyData = Object.entries(data.schools_per_subcounty || {}).map(
-    ([name, value]) => ({ name, schools: value })
+    ([name, value]) => ({
+      name,
+      schools: Math.round(value),
+    })
   );
 
   const genderData = data.students?.by_gender
     ? Object.entries(data.students.by_gender).map(([key, val]) => ({
-        name: key === "M" ? "Male" : "Female",
-        value: val,
+        name: key === "M" ? "Boys" : "Girls",
+        value: Math.round(val),
       }))
     : [];
 
   const disabilityData = data.students?.by_disability_type
     ? Object.entries(data.students.by_disability_type).map(([key, val]) => ({
         name: key,
-        value: val,
+        value: Math.round(val),
       }))
     : [];
 
-  // --- Theme Colors ---
-  const COLORS = ["#2772A0", "#4C9ED9", "#A8CDE8", "#1E4F73", "#CCDDEA"];
-
-  // --- Animations ---
+  // --- Animation variants ---
   const fadeUp = {
     hidden: { opacity: 0, y: 20 },
     visible: (i = 0) => ({
@@ -98,14 +97,14 @@ const CountyOverview = ({ data }) => {
             animate="visible"
             className="bg-white/90 border border-[#CCDDEA] rounded-2xl shadow-md p-5 flex flex-col justify-center items-center hover:shadow-lg hover:scale-[1.03] transition-all duration-300"
           >
-            <Icon size={28} color={color} className="mb-3" />
+            <Icon size={30} color={color} className="mb-3" />
             <p className="text-gray-600 text-sm">{label}</p>
             <h3 className="text-2xl font-bold text-[#1E293B] mt-1">{value}</h3>
           </motion.div>
         ))}
       </div>
 
-      {/* Compact Chart Cards Row */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Gender Distribution */}
         <motion.div
@@ -117,33 +116,28 @@ const CountyOverview = ({ data }) => {
           <h3 className="text-lg font-semibold text-[#2772A0] mb-3 flex items-center gap-2">
             <PieIcon size={18} className="text-[#2772A0]" /> Gender Distribution
           </h3>
+          <div className="flex justify-around items-center mb-3 text-sm font-medium text-gray-500">
+            <div className="flex items-center gap-1">
+              <User color="#2772A0" size={18} /> Boys
+            </div>
+            <div className="flex items-center gap-1">
+              <UserCheck color="#4C9ED9" size={18} /> Girls
+            </div>
+          </div>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={genderData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={45}
-                  outerRadius={70}
-                  paddingAngle={3}
-                >
-                  {genderData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                      stroke="#fff"
-                      strokeWidth={2}
-                    />
-                  ))}
-                </Pie>
+              <BarChart data={genderData} barSize={40}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="name" stroke="#6B7280" />
+                <YAxis stroke="#6B7280" allowDecimals={false} />
                 <Tooltip />
-              </PieChart>
+                <Bar dataKey="value" fill="#2772A0" radius={[6, 6, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </motion.div>
 
-        {/* Disability Distribution */}
+        {/* Disability Distribution - Vertical Bars */}
         <motion.div
           variants={fadeUp}
           initial="hidden"
@@ -155,22 +149,28 @@ const CountyOverview = ({ data }) => {
           </h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={disabilityData}
-                layout="vertical"
-                margin={{ top: 5, right: 20, left: 30, bottom: 5 }}
-              >
+              <BarChart data={disabilityData} barSize={30}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis type="number" stroke="#6B7280" />
-                <YAxis dataKey="name" type="category" stroke="#6B7280" width={100} />
+                <XAxis dataKey="name" stroke="#6B7280" />
+                <YAxis stroke="#6B7280" allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="value" fill="#2772A0" radius={[5, 5, 5, 5]} />
+                <Bar
+                  dataKey="value"
+                  fill="url(#colorDisability)"
+                  radius={[6, 6, 0, 0]}
+                />
+                <defs>
+                  <linearGradient id="colorDisability" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2772A0" stopOpacity={0.9} />
+                    <stop offset="95%" stopColor="#A8CDE8" stopOpacity={0.7} />
+                  </linearGradient>
+                </defs>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </motion.div>
 
-        {/* Schools per Subcounty */}
+        {/* Schools per Subcounty - Upgraded Visual */}
         <motion.div
           variants={fadeUp}
           initial="hidden"
@@ -182,12 +182,29 @@ const CountyOverview = ({ data }) => {
           </h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={subcountyData}>
+              <BarChart data={subcountyData} barSize={28}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis dataKey="name" stroke="#6B7280" />
-                <YAxis stroke="#6B7280" />
-                <Tooltip />
-                <Bar dataKey="schools" fill="#2772A0" radius={[5, 5, 0, 0]} />
+                <YAxis stroke="#6B7280" allowDecimals={false} />
+                <Tooltip
+                  cursor={{ fill: "#CCDDEA50" }}
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    borderRadius: "10px",
+                    border: "1px solid #CCDDEA",
+                  }}
+                />
+                <defs>
+                  <linearGradient id="colorSchools" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2772A0" stopOpacity={0.95} />
+                    <stop offset="95%" stopColor="#4C9ED9" stopOpacity={0.75} />
+                  </linearGradient>
+                </defs>
+                <Bar
+                  dataKey="schools"
+                  fill="url(#colorSchools)"
+                  radius={[6, 6, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
