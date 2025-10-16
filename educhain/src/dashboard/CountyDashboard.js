@@ -43,8 +43,6 @@ const COLORS = {
 const tabs = [
   { id: "overview", label: "Overview", icon: Home },
   { id: "schools", label: "Schools", icon: School },
-  { id: "students", label: "Students", icon: Users },
-  { id: "assessments", label: "Assessments", icon: BookOpen },
   { id: "resources", label: "Resources", icon: ClipboardList },
   { id: "ai-analytics", label: "AI Analytics", icon: TrendingUp },
 ];
@@ -52,8 +50,6 @@ const tabs = [
 const endpoints = {
   overview: "/reports/dashboard/county/",
   schools: "/schools/all/",
-  students: "/students/all/",
-  assessments: "/students/assessments/averages/school/",
   resources: "/schools/resources/",
   ai_analytics: "/reports/analytics/",
 };
@@ -319,61 +315,20 @@ export default function CountyDashboard() {
                   </div>
                   <Table
                     columns={[
-                      { key: "name", title: "Name" },
                       { key: "code", title: "Code" },
+                      { key: "name", title: "Name" },
                       { key: "subcounty", title: "Subcounty" },
-                      { key: "students", title: "Students" },
+                      { 
+                        key: "headteacher", 
+                        title: "Headteacher", 
+                        render: (row) => row.headteacher ? row.headteacher.split(' ')[0] + " " + row.headteacher.split(' ')[1].charAt(0) + "." : "N/A" 
+                      },
+                      { key: "total_teachers", title: "Teachers" },
+                      { key: "total_students", title: "Students" },
+                      { key: "assessment_average", title: "Avg. Assessments" },
                     ]}
                     rows={schoolsRows}
                   />
-                </motion.section>
-              )}
-
-              {activeTab === "students" && (
-                <motion.section
-                  key="students"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-[#2772A0]">Students</h3>
-                    <button className="px-3 py-2 rounded-md bg-[#2772A0] text-white hover:bg-[#1f5b80]">
-                      Add Student
-                    </button>
-                  </div>
-                  <Table
-                    columns={[
-                      { key: "name", title: "Name" },
-                      { key: "age", title: "Age" },
-                      { key: "school", title: "School" },
-                      { key: "status", title: "Status" },
-                    ]}
-                    rows={studentsRows}
-                  />
-                </motion.section>
-              )}
-
-              {activeTab === "assessments" && (
-                <motion.section
-                  key="assessments"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-[#2772A0]">Assessments</h3>
-                    <button className="px-3 py-2 rounded-md bg-[#2772A0] text-white hover:bg-[#1f5b80]">
-                      Create
-                    </button>
-                  </div>
-                  <BarChart width={600} height={250} data={assessmentsRows}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis dataKey="name" stroke="#9CA3AF" />
-                    <YAxis stroke="#9CA3AF" />
-                    <Tooltip />
-                    <Bar dataKey="score" fill={COLORS.oceanBlue} />
-                  </BarChart>
                 </motion.section>
               )}
 
