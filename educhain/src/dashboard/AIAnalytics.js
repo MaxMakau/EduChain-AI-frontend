@@ -22,7 +22,7 @@ const AIAnalytics = () => {
     try {
       setIsLoadingInsights(true);
       console.log("Fetching AI insights...");
-      const response = await axiosInstance.get('/reports/analytics/');
+      const response = await axiosInstance.get('/reports/analytics/?status=ACTIVE');
       setInsights(response.data);
       console.log("AI insights fetched successfully:", response.data);
     } catch (err) {

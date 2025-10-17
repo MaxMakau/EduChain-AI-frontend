@@ -12,6 +12,7 @@ import StudentList from "../components/StudentList";
 import StudentDetail from "../components/StudentDetail";
 import ChatInterface from "../components/chat/TeacherChatInterface";
 import InventoryManagement from "../dashboard/InventoryManagement"; // Corrected import path
+import AIAnalytics from "../dashboard/AIAnalytics"; // NEW IMPORT
 import {
   Users,
   ClipboardCheck,
@@ -94,6 +95,7 @@ const HeadteacherDashboard = () => {
     { id: "resource", label: "Resource Management", icon: FileText },
     { id: "finance", label: "Finance", icon: Banknote },
     { id: "inventory", label: "Inventory Management", icon: Package }, // NEW TAB
+    { id: "analytics", label: "AI Analytics", icon: Brain }, // NEW TAB
     { id: "timetable", label: "Timetable Oversight", icon: CalendarDays },
     { id: "leave", label: "Leave Management", icon: ClipboardCheck },
     { id: "evaluation", label: "Teacher Evaluation", icon: BookOpen },
@@ -294,6 +296,7 @@ const HeadteacherDashboard = () => {
         {tab === "resource" && <ResourceApprovalPanel />}
         {tab === "finance" && <FinancePanel />}
         {tab === "inventory" && <InventoryManagement dashboardData={data} />} {/* Pass dashboardData as prop */}
+        {tab === "analytics" && <AIAnalytics dashboardData={data} />} {/* Pass dashboardData as prop */}
         {tab === "timetable" && <TimetableApprovalPanel />}
         {tab === "leave" && <LeaveApprovalPanel />}
         {tab === "evaluation" && <TeacherEvaluationPanel />}
