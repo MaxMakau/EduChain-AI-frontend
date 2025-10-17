@@ -22,7 +22,12 @@ const TimetableApprovalPanel = () => {
         const res = await axiosInstance.get(`/schools/timetable/${schoolId}/`); // Use dynamic schoolId
         setTimetables(res.data.schedules || []);
       } catch (err) {
-        setError('Failed to fetch timetables.');
+        if (err.response && err.response.data && err.response.data.detail === "No Timetable matches the given query.") {
+          setTimetables([]); // Explicitly set to empty array to trigger the no records message
+          setError(''); // Clear any previous error as this is a handled case
+        } else {
+          setError('Failed to fetch timetables.');
+        }
       } finally {
         setLoading(false);
       }

@@ -296,7 +296,7 @@ const HeadteacherDashboard = () => {
         {tab === "resource" && <ResourceApprovalPanel />}
         {tab === "finance" && <FinancePanel />}
         {tab === "inventory" && <InventoryManagement dashboardData={data} />} {/* Pass dashboardData as prop */}
-        {tab === "analytics" && <AIAnalytics dashboardData={data} />} {/* Pass dashboardData as prop */}
+        {tab === "analytics" && <AIAnalytics dashboardData={data} user={user} />} {/* Pass dashboardData and user as props */}
         {tab === "timetable" && <TimetableApprovalPanel />}
         {tab === "leave" && <LeaveApprovalPanel />}
         {tab === "evaluation" && <TeacherEvaluationPanel />}

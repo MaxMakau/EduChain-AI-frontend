@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getInventory, updateInventory } from '../api/inventory';
+import { getInventory, updateInventory, patchInventory } from '../api/inventory';
 import { useAuth } from '../context/AuthContext';
 import { useOutletContext } from 'react-router-dom'; // Assuming dashboard uses outlet context
 
@@ -9,6 +9,8 @@ const InventoryManagement = ({ dashboardData: propDashboardData }) => {
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedInventory, setEditedInventory] = useState(null);
+  const [newItemName, setNewItemName] = useState(''); // New state for new item name
+  const [newItemQuantity, setNewItemQuantity] = useState(0); // New state for new item quantity
   
   const { user, role, isLoading: authLoading } = useAuth(); // Get isLoading from useAuth
   const outletContext = useOutletContext();
@@ -69,10 +71,34 @@ const InventoryManagement = ({ dashboardData: propDashboardData }) => {
     }
 };
 
+  const handleAddItem = () => {
+    if (newItemName.trim() === '') return;
+    setEditedInventory(prev => ({
+      ...prev,
+      other_items: {
+        ...prev.other_items,
+        [newItemName.trim()]: parseInt(newItemQuantity) || 0,
+      },
+    }));
+    setNewItemName('');
+    setNewItemQuantity(0);
+  };
+
+  const handleDeleteItem = (keyToDelete) => {
+    setEditedInventory(prev => {
+      const newOtherItems = { ...prev.other_items };
+      delete newOtherItems[keyToDelete];
+      return {
+        ...prev,
+        other_items: newOtherItems,
+      };
+    });
+  };
+
 const handleSave = async () => {
     try {
         setIsLoading(true);
-        await updateInventory(schoolId, editedInventory);
+        await patchInventory(schoolId, editedInventory); // Changed from updateInventory to patchInventory
         setInventory(editedInventory);
         setIsEditing(false);
         alert("Inventory updated successfully!");
@@ -133,6 +159,14 @@ const handleSave = async () => {
               <p className="text-gray-900 text-xl font-bold">{inventory.stationery_packs}</p>
             )}
           </div>
+          <div className="mt-3">
+            <label className="block text-gray-700 text-sm font-bold mb-2">Desks:</label>
+            {canEdit && isEditing ? (
+              <input type="number" name="desks" value={editedInventory?.desks || ''} onChange={handleEditChange} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+            ) : (
+              <p className="text-gray-900 text-xl font-bold">{inventory.desks}</p>
+            )}
+          </div>
 
           <div className="mt-4 border-t pt-4">
             <h4 className="text-md font-semibold text-gray-700 mb-2">Other Items:</h4>
@@ -151,16 +185,35 @@ const handleSave = async () => {
                 ) : (
                   <p className="w-1/2 text-gray-900 font-medium">{value}</p>
                 )}
+                {canEdit && isEditing && (
+                  <button 
+                    onClick={() => handleDeleteItem(key)} 
+                    className="ml-2 text-red-600 hover:text-red-800 focus:outline-none"
+                  >
+                    &times;
+                  </button>
+                )}
               </div>
             ))}
             {canEdit && isEditing && (
-                <div className="mt-3">
+                <div className="mt-3 flex items-center">
                     <input 
                         type="text"
                         placeholder="New item name"
-                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        onBlur={(e) => handleEditChange({target: {name: "other_items_key", value: e.target.value}})} 
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        className="shadow appearance-none border rounded w-1/2 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2"
                     />
+                    <input 
+                        type="number"
+                        placeholder="Quantity"
+                        value={newItemQuantity}
+                        onChange={(e) => setNewItemQuantity(parseInt(e.target.value) || 0)}
+                        className="shadow appearance-none border rounded w-1/4 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2"
+                    />
+                    <button onClick={handleAddItem} className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 text-sm">
+                      Add
+                    </button>
                 </div>
             )}
           </div>

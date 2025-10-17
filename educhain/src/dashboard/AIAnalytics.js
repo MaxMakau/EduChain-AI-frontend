@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axiosInstance from '../api/axiosInstance';
 
-const AIAnalytics = () => {
+const AIAnalytics = ({ user }) => {
   console.log("AIAnalytics component rendered");
   const [insights, setInsights] = useState([]);
   const [rules, setRules] = useState({}); // Keep rules state for potential future use, but not displayed as raw JSON
@@ -36,6 +36,14 @@ const AIAnalytics = () => {
 
   useEffect(() => {
     const fetchRules = async () => {
+      // Skip fetching rules if the user is a HEADTEACHER
+      if (user && user.role === "HEADTEACHER") {
+        setIsLoadingRules(false);
+        setRules({}); // Ensure rules is an empty object
+        console.log("Skipping analytics rules fetch for Headteacher role.");
+        return;
+      }
+
       try {
         setIsLoadingRules(true);
         console.log("Fetching analytics rules...");
@@ -52,7 +60,7 @@ const AIAnalytics = () => {
 
     fetchInsights(); // Initial fetch
     fetchRules(); // Still fetch rules in case they are needed for future UI
-  }, [fetchInsights]);
+  }, [fetchInsights, user]); // Add user to dependency array
 
   useEffect(() => {
     let timerInterval;
