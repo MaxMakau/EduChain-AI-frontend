@@ -1,3 +1,5 @@
+// ---------------- LOGIN & SIGNUP PAGE (with gradient) ----------------
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -13,13 +15,7 @@ const colors = {
   darkText: "#1E293B",
 };
 
-const LOGIN_ROLES = [
-  { value: "HEADTEACHER", label: "Headteacher" },
-  { value: "TEACHER", label: "Teacher" },
-  { value: "OFFICER", label: "County Officer" },
-];
-
-// Reusable input component
+// ---------------------------------- INPUT COMPONENT ----------------------------------
 const Input = (props) => (
   <input
     {...props}
@@ -27,7 +23,7 @@ const Input = (props) => (
   />
 );
 
-// ---------------- SIGNUP FORM ----------------
+// ---------------------------------- SIGNUP FORM ----------------------------------
 function SignupForm() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -123,6 +119,12 @@ function SignupForm() {
       setIsProcessing(false);
     }
   };
+
+  const LOGIN_ROLES = [
+    { value: "HEADTEACHER", label: "Headteacher" },
+    { value: "TEACHER", label: "Teacher" },
+    { value: "OFFICER", label: "County Officer" },
+  ];
 
   return (
     <form onSubmit={handleSignup} className="space-y-4">
@@ -235,7 +237,7 @@ function SignupForm() {
   );
 }
 
-// ---------------- LOGIN FORM ----------------
+// ---------------------------------- LOGIN FORM ----------------------------------
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -247,10 +249,10 @@ function LoginForm() {
     e.preventDefault();
     try {
       const userProfile = await login(email, password);
-
-      // ✅ Navigate based on role
       if (userProfile.role) {
-        navigate(`/dashboard/${userProfile.role.toLowerCase()}`, { replace: true });
+        navigate(`/dashboard/${userProfile.role.toLowerCase()}`, {
+          replace: true,
+        });
       } else {
         navigate("/onboarding", { replace: true });
       }
@@ -271,7 +273,6 @@ function LoginForm() {
         onChange={(e) => setEmail(e.target.value)}
         required
       />
-
       <Input
         type="password"
         placeholder="Password"
@@ -299,7 +300,10 @@ function LoginForm() {
       </button>
 
       <div className="text-center mt-3">
-        <a href="/forgot-password" className="text-[#2772A0] hover:underline text-sm">
+        <a
+          href="/forgot-password"
+          className="text-[#2772A0] hover:underline text-sm"
+        >
           Forgot password?
         </a>
       </div>
@@ -313,17 +317,19 @@ function LoginForm() {
   );
 }
 
-// ---------------- PAGE WRAPPER ----------------
+// ---------------------------------- PAGE WRAPPER ----------------------------------
 const LoginPage = () => {
   const [tab, setTab] = useState("login");
 
   return (
     <div
       className="min-h-screen flex flex-col justify-center items-center px-4"
-      style={{ backgroundColor: colors.cloudySky }}
+      style={{
+        background: "linear-gradient(to bottom, #F7EEC9, #A3E2E4)",
+      }}
     >
       {/* CARD */}
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md mt-10 mb-16">
+      <div className="backdrop-blur-md bg-white/70 shadow-lg rounded-2xl p-8 w-full max-w-md mt-10 mb-16 border border-white/30">
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <img src={logo} alt="EduChainAI Logo" className="h-14 w-14" />
@@ -335,7 +341,7 @@ const LoginPage = () => {
             className={`pb-2 border-b-2 transition ${
               tab === "login"
                 ? "border-[#2772A0] text-[#2772A0] font-semibold"
-                : "border-transparent text-gray-500"
+                : "border-transparent text-gray-600 hover:text-[#2772A0]"
             }`}
             onClick={() => setTab("login")}
           >
@@ -345,7 +351,7 @@ const LoginPage = () => {
             className={`pb-2 border-b-2 transition ${
               tab === "signup"
                 ? "border-[#2772A0] text-[#2772A0] font-semibold"
-                : "border-transparent text-gray-500"
+                : "border-transparent text-gray-600 hover:text-[#2772A0]"
             }`}
             onClick={() => setTab("signup")}
           >
@@ -355,7 +361,7 @@ const LoginPage = () => {
 
         {tab === "login" ? <LoginForm /> : <SignupForm />}
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-sm text-gray-600 mt-6">
           © {new Date().getFullYear()} EduChainAI. All rights reserved.
         </p>
       </div>
