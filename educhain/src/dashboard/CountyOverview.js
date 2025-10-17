@@ -8,11 +8,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
 } from "recharts";
 import { motion } from "framer-motion";
 import {
@@ -23,6 +18,8 @@ import {
   PieChart as PieIcon,
   BarChart2,
   Sparkles,
+  User,
+  UserCheck,
 } from "lucide-react";
 
 const CountyOverview = ({ data }) => {
@@ -34,29 +31,29 @@ const CountyOverview = ({ data }) => {
     );
   }
 
-  // --- Transform data ---
+  // --- Data prep ---
   const subcountyData = Object.entries(data.schools_per_subcounty || {}).map(
-    ([name, value]) => ({ name, schools: value })
+    ([name, value]) => ({
+      name,
+      schools: Math.round(value),
+    })
   );
 
   const genderData = data.students?.by_gender
     ? Object.entries(data.students.by_gender).map(([key, val]) => ({
-        name: key === "M" ? "Male" : "Female",
-        value: val,
+        name: key === "M" ? "Boys" : "Girls",
+        value: Math.round(val),
       }))
     : [];
 
   const disabilityData = data.students?.by_disability_type
     ? Object.entries(data.students.by_disability_type).map(([key, val]) => ({
         name: key,
-        value: val,
+        value: Math.round(val),
       }))
     : [];
 
-  // --- Chart Colors ---
-  const COLORS = ["#2772A0", "#4C9ED9", "#A8CDE8", "#1E4F73", "#CCDDEA"];
-
-  // --- Motion config ---
+  // --- Animation variants ---
   const fadeUp = {
     hidden: { opacity: 0, y: 20 },
     visible: (i = 0) => ({
@@ -68,7 +65,7 @@ const CountyOverview = ({ data }) => {
 
   return (
     <motion.section
-      className="space-y-10 bg-gradient-to-b from-[#CCDDEA]/40 to-white p-6 md:p-10 rounded-3xl shadow-sm"
+      className="space-y-8 bg-gradient-to-b from-[#CCDDEA]/40 to-white p-6 md:p-10 rounded-3xl shadow-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
@@ -98,154 +95,121 @@ const CountyOverview = ({ data }) => {
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className="bg-white/90 backdrop-blur-md border border-[#CCDDEA] rounded-2xl shadow-md p-5 flex flex-col justify-center items-center hover:shadow-lg hover:scale-[1.03] transition-all duration-300"
+            className="bg-white/90 border border-[#CCDDEA] rounded-2xl shadow-md p-5 flex flex-col justify-center items-center hover:shadow-lg hover:scale-[1.03] transition-all duration-300"
           >
-            <Icon size={28} color={color} className="mb-3" />
+            <Icon size={30} color={color} className="mb-3" />
             <p className="text-gray-600 text-sm">{label}</p>
             <h3 className="text-2xl font-bold text-[#1E293B] mt-1">{value}</h3>
           </motion.div>
         ))}
       </div>
 
-      {/* Gender Distribution */}
-      <motion.div
-        variants={fadeUp}
-        initial="hidden"
-        animate="visible"
-        className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow-lg p-6"
-      >
-        <h3 className="text-lg font-semibold text-[#2772A0] mb-4 flex items-center gap-2">
-          <PieIcon size={20} className="text-[#2772A0]" /> Gender Distribution
-        </h3>
-        <div className="h-72 flex justify-center">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={genderData}
-                dataKey="value"
-                nameKey="name"
-                outerRadius={110}
-                innerRadius={60}
-                paddingAngle={4}
-              >
-                {genderData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                    stroke="#fff"
-                    strokeWidth={2}
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </motion.div>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Gender Distribution */}
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow p-5 flex flex-col"
+        >
+          <h3 className="text-lg font-semibold text-[#2772A0] mb-3 flex items-center gap-2">
+            <PieIcon size={18} className="text-[#2772A0]" /> Gender Distribution
+          </h3>
+          <div className="flex justify-around items-center mb-3 text-sm font-medium text-gray-500">
+            <div className="flex items-center gap-1">
+              <User color="#2772A0" size={18} /> Boys
+            </div>
+            <div className="flex items-center gap-1">
+              <UserCheck color="#4C9ED9" size={18} /> Girls
+            </div>
+          </div>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={genderData} barSize={40}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="name" stroke="#6B7280" />
+                <YAxis stroke="#6B7280" allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#2772A0" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
 
-      {/* Disability Distribution (Simulated 3D Pie Chart) */}
-      <motion.div
-        variants={fadeUp}
-        initial="hidden"
-        animate="visible"
-        className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow-lg p-6"
-      >
-        <h3 className="text-lg font-semibold text-[#2772A0] mb-4 flex items-center gap-2">
-          <ClipboardList size={20} className="text-[#2772A0]" /> Disability Distribution
-        </h3>
-        <div className="h-80 flex justify-center">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <defs>
-                {COLORS.map((color, i) => (
-                  <linearGradient id={`grad-${i}`} key={i} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={color} stopOpacity={0.9} />
-                    <stop offset="95%" stopColor="#1E293B" stopOpacity={0.2} />
+        {/* Disability Distribution - Vertical Bars */}
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow p-5 flex flex-col"
+        >
+          <h3 className="text-lg font-semibold text-[#2772A0] mb-3 flex items-center gap-2">
+            <ClipboardList size={18} className="text-[#2772A0]" /> Disability Distribution
+          </h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={disabilityData} barSize={30}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="name" stroke="#6B7280" />
+                <YAxis stroke="#6B7280" allowDecimals={false} />
+                <Tooltip />
+                <Bar
+                  dataKey="value"
+                  fill="url(#colorDisability)"
+                  radius={[6, 6, 0, 0]}
+                />
+                <defs>
+                  <linearGradient id="colorDisability" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2772A0" stopOpacity={0.9} />
+                    <stop offset="95%" stopColor="#A8CDE8" stopOpacity={0.7} />
                   </linearGradient>
-                ))}
-              </defs>
-              {/* Base layer for depth (shadow illusion) */}
-              <Pie
-                data={disabilityData}
-                dataKey="value"
-                nameKey="name"
-                outerRadius={110}
-                innerRadius={65}
-                paddingAngle={5}
-                cx="50%"
-                cy="55%"
-                isAnimationActive={true}
-              >
-                {disabilityData.map((entry, index) => (
-                  <Cell
-                    key={`cell-bg-${index}`}
-                    fill={`url(#grad-${index % COLORS.length})`}
-                    stroke="#e5e7eb"
-                    strokeWidth={1}
-                  />
-                ))}
-              </Pie>
+                </defs>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
 
-              {/* Inner highlight ring */}
-              <Pie
-                data={disabilityData}
-                dataKey="value"
-                nameKey="name"
-                outerRadius={70}
-                innerRadius={45}
-                cx="50%"
-                cy="53%"
-              >
-                {disabilityData.map((entry, index) => (
-                  <Cell
-                    key={`cell-inner-${index}`}
-                    fill={`url(#grad-${index % COLORS.length})`}
-                    fillOpacity={0.85}
-                  />
-                ))}
-              </Pie>
-
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </motion.div>
-
-      {/* Schools per Subcounty (AreaChart) */}
-      <motion.div
-        variants={fadeUp}
-        initial="hidden"
-        animate="visible"
-        className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow-lg p-6"
-      >
-        <h3 className="text-lg font-semibold text-[#2772A0] mb-4 flex items-center gap-2">
-          <BarChart2 size={20} className="text-[#2772A0]" /> Schools per Subcounty
-        </h3>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={subcountyData}>
-              <defs>
-                <linearGradient id="colorSchools" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#2772A0" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#CCDDEA" stopOpacity={0.2} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="name" stroke="#6B7280" />
-              <YAxis stroke="#6B7280" />
-              <Tooltip />
-              <Area
-                type="monotone"
-                dataKey="schools"
-                stroke="#2772A0"
-                fill="url(#colorSchools)"
-                strokeWidth={3}
-                dot={{ r: 4, fill: "#2772A0" }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </motion.div>
+        {/* Schools per Subcounty - Upgraded Visual */}
+        <motion.div
+          variants={fadeUp}
+          initial="hidden"
+          animate="visible"
+          className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow p-5 flex flex-col"
+        >
+          <h3 className="text-lg font-semibold text-[#2772A0] mb-3 flex items-center gap-2">
+            <BarChart2 size={18} className="text-[#2772A0]" /> Schools per Subcounty
+          </h3>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={subcountyData} barSize={28}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="name" stroke="#6B7280" />
+                <YAxis stroke="#6B7280" allowDecimals={false} />
+                <Tooltip
+                  cursor={{ fill: "#CCDDEA50" }}
+                  contentStyle={{
+                    backgroundColor: "#fff",
+                    borderRadius: "10px",
+                    border: "1px solid #CCDDEA",
+                  }}
+                />
+                <defs>
+                  <linearGradient id="colorSchools" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2772A0" stopOpacity={0.95} />
+                    <stop offset="95%" stopColor="#4C9ED9" stopOpacity={0.75} />
+                  </linearGradient>
+                </defs>
+                <Bar
+                  dataKey="schools"
+                  fill="url(#colorSchools)"
+                  radius={[6, 6, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+      </div>
     </motion.section>
   );
 };
