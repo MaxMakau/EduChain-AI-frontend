@@ -7,6 +7,7 @@ import { signupUser } from "../api/auth";
 import Toast from "../components/Toast";
 import { FcGoogle } from "react-icons/fc";
 import logo from "../assets/logo.png";
+import useThemeColor from "../hooks/useThemeColor";
 
 const colors = {
   oceanBlue: "#2772A0",

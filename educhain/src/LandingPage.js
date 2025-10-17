@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import logo from './assets/logo.png';
+import useThemeColor from "./hooks/useThemeColor";
 
 const colors = {
   oceanBlue: '#2772A0',
@@ -111,8 +112,7 @@ const EduChainLanding = () => {
           background: 'transparent',
         }}
       >
-        © {new Date().getFullYear()} EduChainAI — Empowering ECDE with Trust &
-        Technology.
+        © {new Date().getFullYear()} EduChainAI
       </footer>
     </div>
   );

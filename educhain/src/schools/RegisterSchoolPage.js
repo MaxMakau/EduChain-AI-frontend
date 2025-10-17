@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import axiosInstance from '../api/axiosInstance';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { MapPin } from 'lucide-react';
-import logo from '../assets/logo.png';
+import React, { useState, useEffect } from "react";
+import axiosInstance from "../api/axiosInstance";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { MapPin } from "lucide-react";
+import logo from "../assets/logo.png";
+import useThemeColor from "../hooks/useThemeColor";
 
 const SUBCOUNTIES = [
   "Westlands", "Langata", "Embakasi East", "Embakasi West", "Embakasi South",
@@ -12,50 +13,63 @@ const SUBCOUNTIES = [
 ];
 
 const colors = {
-  oceanBlue: '#2772A0',
-  cloudySky: '#CCDDEA',
-  white: '#FFFFFF',
-  textDark: '#1E293B'
+  oceanBlue: "#2772A0",
+  softBeige: "#F7EEC9",
+  aquaBlue: "#A3E2E4",
+  white: "#FFFFFF",
+  textDark: "#1E293B"
 };
 
 const RegisterSchoolPage = () => {
   const { updateUser } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    name: '',
-    code: '',
-    subcounty: '',
-    latitude: '',
-    longitude: ''
+    name: "",
+    code: "",
+    subcounty: "",
+    latitude: "",
+    longitude: ""
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+  useEffect(() => {
+    // ✅ Change status bar color dynamically
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", colors.oceanBlue);
+    else {
+      const newMeta = document.createElement("meta");
+      newMeta.name = "theme-color";
+      newMeta.content = colors.oceanBlue;
+      document.head.appendChild(newMeta);
+    }
+  }, []);
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const getLocation = () => {
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser.');
+      setError("Geolocation is not supported by your browser.");
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      pos => {
+      (pos) => {
         setForm({
           ...form,
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude
         });
       },
-      err => setError('Failed to get location: ' + err.message)
+      (err) => setError("Failed to get location: " + err.message)
     );
   };
 
-  const handleSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     try {
       const payload = {
         name: form.name,
@@ -67,10 +81,10 @@ const RegisterSchoolPage = () => {
         })
       };
 
-      const res = await axiosInstance.post('/schools/register/', payload);
-      setSuccess('School registered successfully!');
+      const res = await axiosInstance.post("/schools/register/", payload);
+      setSuccess("School registered successfully!");
       updateUser({ school: res.data });
-      setTimeout(() => navigate('/dashboard/headteacher', { replace: true }), 1200);
+      setTimeout(() => navigate("/dashboard/headteacher", { replace: true }), 1200);
     } catch (err) {
       setError(err.response?.data?.detail || err.response?.data?.code || err.message);
     } finally {
@@ -82,15 +96,14 @@ const RegisterSchoolPage = () => {
     <div
       className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-8 py-8"
       style={{
-        background: `linear-gradient(to bottom right, ${colors.cloudySky}, ${colors.white})`
+        background: `linear-gradient(135deg, ${colors.softBeige}, ${colors.aquaBlue})`,
       }}
     >
-      {/* Card container */}
+      {/* Glassmorphic Card */}
       <div
-        className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8 sm:p-10 mx-4"
+        className="w-full max-w-lg bg-white/70 backdrop-blur-xl rounded-2xl shadow-lg p-8 sm:p-10 mx-4 border border-white/40"
         style={{
-          margin: '2rem',
-          boxShadow: '0 8px 20px rgba(0,0,0,0.08)'
+          boxShadow: "0 8px 25px rgba(0,0,0,0.08)"
         }}
       >
         {/* Logo + Heading */}
@@ -120,7 +133,7 @@ const RegisterSchoolPage = () => {
               onChange={handleChange}
               required
               maxLength={255}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
+              className="w-full rounded-lg px-3 py-2 bg-white/60 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
             />
           </div>
 
@@ -134,7 +147,7 @@ const RegisterSchoolPage = () => {
               onChange={handleChange}
               required
               maxLength={20}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
+              className="w-full rounded-lg px-3 py-2 bg-white/60 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
             />
           </div>
 
@@ -146,11 +159,13 @@ const RegisterSchoolPage = () => {
               value={form.subcounty}
               onChange={handleChange}
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
+              className="w-full rounded-lg px-3 py-2 bg-white/60 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
             >
               <option value="">Select Subcounty</option>
-              {SUBCOUNTIES.map(s => (
-                <option key={s} value={s}>{s}</option>
+              {SUBCOUNTIES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
             </select>
           </div>
@@ -166,7 +181,7 @@ const RegisterSchoolPage = () => {
                 placeholder="Latitude"
                 type="number"
                 step="any"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
+                className="flex-1 rounded-lg px-3 py-2 bg-white/60 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
               />
               <input
                 name="longitude"
@@ -175,13 +190,15 @@ const RegisterSchoolPage = () => {
                 placeholder="Longitude"
                 type="number"
                 step="any"
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
+                className="flex-1 rounded-lg px-3 py-2 bg-white/60 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
               />
               <button
                 type="button"
                 onClick={getLocation}
                 className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-white transition"
-                style={{ backgroundColor: colors.oceanBlue }}
+                style={{
+                  backgroundColor: colors.oceanBlue,
+                }}
               >
                 <MapPin size={16} /> Get
               </button>
@@ -196,19 +213,19 @@ const RegisterSchoolPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg text-white font-semibold py-2 mt-4 transition"
+            className="w-full rounded-lg text-white font-semibold py-2 mt-4 transition shadow-md hover:shadow-lg"
             style={{
               backgroundColor: colors.oceanBlue,
               opacity: loading ? 0.7 : 1
             }}
           >
-            {loading ? 'Registering...' : 'Register School'}
+            {loading ? "Registering..." : "Register School"}
           </button>
         </form>
       </div>
 
       {/* Footer */}
-      <p className="text-sm text-gray-600 mt-6 text-center">
+      <p className="text-sm text-gray-700 mt-6 text-center">
         © {new Date().getFullYear()} EduChainAI. Empowering ECDE with Trust & Technology.
       </p>
     </div>
