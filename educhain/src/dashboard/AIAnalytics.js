@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axiosInstance from '../api/axiosInstance';
 
 const AIAnalytics = () => {
@@ -14,24 +14,27 @@ const AIAnalytics = () => {
   const [filterSeverity, setFilterSeverity] = useState('ALL'); // Filter by severity
   const [filterStatus, setFilterStatus] = useState('ACTIVE'); // Filter by status
   const [isFetchingLatest, setIsFetchingLatest] = useState(false); // New state for loading latest insights
+  const [isTimerActive, setIsTimerActive] = useState(false); // State for timer activity
+  const [timerSeconds, setTimerSeconds] = useState(0); // State for timer seconds
   const token = localStorage.getItem("access_token"); // Get token for API calls
 
-  useEffect(() => {
-    const fetchInsights = async () => {
-      try {
-        setIsLoadingInsights(true);
-        console.log("Fetching AI insights...");
-        const response = await axiosInstance.get('/reports/analytics/');
-        setInsights(response.data);
-        console.log("AI insights fetched successfully:", response.data);
-      } catch (err) {
-        console.error("Failed to fetch AI insights:", err);
-        setErrorInsights(err);
-      } finally {
-        setIsLoadingInsights(false);
-      }
-    };
+  const fetchInsights = useCallback(async () => {
+    try {
+      setIsLoadingInsights(true);
+      console.log("Fetching AI insights...");
+      const response = await axiosInstance.get('/reports/analytics/');
+      setInsights(response.data);
+      console.log("AI insights fetched successfully:", response.data);
+    } catch (err) {
+      console.error("Failed to fetch AI insights:", err);
+      setErrorInsights(err);
+    } finally {
+      setIsLoadingInsights(false);
+      setIsFetchingLatest(false); // Reset this when insights are loaded
+    }
+  }, []); // Empty dependency array means this function is created once
 
+  useEffect(() => {
     const fetchRules = async () => {
       try {
         setIsLoadingRules(true);
@@ -47,11 +50,27 @@ const AIAnalytics = () => {
       }
     };
 
-    fetchInsights();
+    fetchInsights(); // Initial fetch
     fetchRules(); // Still fetch rules in case they are needed for future UI
-  }, []);
+  }, [fetchInsights]);
+
+  useEffect(() => {
+    let timerInterval;
+    if (isTimerActive && timerSeconds > 0) {
+      timerInterval = setInterval(() => {
+        setTimerSeconds(prevSeconds => prevSeconds - 1);
+      }, 1000);
+    } else if (isTimerActive && timerSeconds === 0) {
+      // Timer finished, now fetch insights
+      setIsTimerActive(false);
+      fetchInsights();
+    }
+    return () => clearInterval(timerInterval);
+  }, [isTimerActive, timerSeconds, fetchInsights]);
 
   const handleGetLatestInsights = async () => {
+    if (isTimerActive) return; // Prevent multiple clicks while timer is active
+
     setIsFetchingLatest(true);
     setErrorInsights(null); // Clear previous errors
     try {
@@ -60,16 +79,15 @@ const AIAnalytics = () => {
         headers: { Authorization: token ? `Bearer ${token}` : undefined },
       });
 
-      // Step 2: Fetch the updated insights after the run
-      const response = await axiosInstance.get('/reports/analytics/', {
-        headers: { Authorization: token ? `Bearer ${token}` : undefined },
-      });
-      setInsights(response.data);
+      // Step 2: Start the timer after triggering the analytics run
+      setIsTimerActive(true);
+      setTimerSeconds(150); // 2 minutes 30 seconds = 150 seconds
+
+      // Insights will be fetched when the timer reaches 0 in the useEffect hook
     } catch (err) {
       console.error("Failed to get latest AI insights:", err);
       setErrorInsights(err);
-    } finally {
-      setIsFetchingLatest(false);
+      setIsFetchingLatest(false); // Ensure loading state is reset on error
     }
   };
 
@@ -136,10 +154,12 @@ const AIAnalytics = () => {
         <h2 className="text-2xl font-bold text-gray-800">AI Analytics & Insights</h2>
         <button
           onClick={handleGetLatestInsights}
-          disabled={isFetchingLatest}
+          disabled={isFetchingLatest || isTimerActive}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
         >
-          {isFetchingLatest ? 'Fetching...' : 'Get Latest Insights'}
+          {isTimerActive ? 
+            `Next insights in ${Math.floor(timerSeconds / 60).toString().padStart(2, '0')}:${(timerSeconds % 60).toString().padStart(2, '0')}` 
+            : (isFetchingLatest ? 'Fetching...' : 'Get Latest Insights')}
         </button>
       </div>
       
