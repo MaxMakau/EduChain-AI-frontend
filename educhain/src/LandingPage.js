@@ -12,7 +12,7 @@ const colors = {
 };
 
 const EduChainLanding = () => {
-  useThemeColor('#F7EEC9'); // same ocean blue as your brand
+
   return (
     <div
       className="min-h-screen flex flex-col font-sans relative"
