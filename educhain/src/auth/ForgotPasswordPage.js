@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { forgotPassword } from "../api/auth";
@@ -15,7 +14,9 @@ const colors = {
 const Input = (props) => (
   <input
     {...props}
-    className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${colors.oceanBlue}] focus:border-transparent outline-none transition`}
+    className={`w-full p-3 border border-gray-300 rounded-xl bg-white/80 backdrop-blur-sm 
+      focus:ring-2 focus:ring-[${colors.oceanBlue}] focus:border-transparent 
+      outline-none transition shadow-sm`}
   />
 );
 
@@ -38,7 +39,10 @@ const ForgotPasswordPage = () => {
       });
       setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
-      const apiError = err.response?.data?.email?.[0] || err.message || "Failed to send reset link. Please try again.";
+      const apiError =
+        err.response?.data?.email?.[0] ||
+        err.message ||
+        "Failed to send reset link. Please try again.";
       setLocalMessage({ message: apiError, type: "error" });
     } finally {
       setIsProcessing(false);
@@ -48,15 +52,26 @@ const ForgotPasswordPage = () => {
   return (
     <div
       className="min-h-screen flex flex-col justify-center items-center px-4"
-      style={{ backgroundColor: colors.cloudySky }}
+      style={{
+        background: "linear-gradient(to bottom, #F7EEC9, #A3E2E4)",
+      }}
     >
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md mt-10 mb-16">
+      <div className="backdrop-blur-md bg-white/70 shadow-xl rounded-2xl p-8 w-full max-w-md mt-10 mb-16 border border-white/30">
+        {/* Logo */}
         <div className="flex justify-center mb-6">
           <img src={logo} alt="EduChainAI Logo" className="h-14 w-14" />
         </div>
-        <h2 className="text-2xl font-bold text-center text-[#1E293B] mb-6">Forgot Your Password?</h2>
-        <p className="text-center text-gray-600 mb-6">Enter your email address and we'll send you a link to reset your password.</p>
 
+        {/* Title */}
+        <h2 className="text-2xl font-bold text-center text-[#1E293B] mb-4">
+          Forgot Your Password?
+        </h2>
+        <p className="text-center text-gray-600 mb-6">
+          Enter your email address and we’ll send you a link to reset your
+          password.
+        </p>
+
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             type="email"
@@ -65,9 +80,14 @@ const ForgotPasswordPage = () => {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
+
           <button
             type="submit"
-            className={`w-full py-3 rounded-lg text-white font-semibold transition ${isProcessing ? "bg-gray-400" : "bg-[#2772A0] hover:bg-[#1f5b80]"}`}
+            className={`w-full py-3 rounded-lg text-white font-semibold transition ${
+              isProcessing
+                ? "bg-gray-400"
+                : "bg-[#2772A0] hover:bg-[#1f5b80] shadow-md hover:shadow-lg"
+            }`}
             disabled={isProcessing}
           >
             {isProcessing ? "Sending..." : "Send Reset Link"}
@@ -85,6 +105,7 @@ const ForgotPasswordPage = () => {
           type={localMessage.type}
           onClose={() => setLocalMessage({ message: "", type: "" })}
         />
+
         <p className="text-center text-sm text-gray-500 mt-6">
           © {new Date().getFullYear()} EduChainAI. All rights reserved.
         </p>

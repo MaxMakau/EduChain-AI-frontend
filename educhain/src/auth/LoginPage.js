@@ -1,4 +1,4 @@
-// ---------------- LOGIN & SIGNUP PAGE (with gradient) ----------------
+// ---------------- LOGIN & SIGNUP PAGE (Aesthetic White Form + Gradient BG) ----------------
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +19,7 @@ const colors = {
 const Input = (props) => (
   <input
     {...props}
-    className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${colors.oceanBlue}] focus:border-transparent outline-none transition`}
+    className={`w-full p-3 border border-gray-200 bg-white rounded-xl shadow-sm focus:ring-2 focus:ring-[${colors.oceanBlue}] focus:border-transparent outline-none transition duration-200 hover:shadow-md`}
   />
 );
 
@@ -161,7 +161,7 @@ function SignupForm() {
       />
 
       <select
-        className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${colors.oceanBlue}] transition`}
+        className={`w-full p-3 border border-gray-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-[${colors.oceanBlue}] transition hover:shadow-md`}
         value={role}
         onChange={(e) => setRole(e.target.value)}
         required
@@ -176,7 +176,7 @@ function SignupForm() {
 
       {role === "TEACHER" && (
         <select
-          className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${colors.oceanBlue}] transition`}
+          className={`w-full p-3 border border-gray-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-[${colors.oceanBlue}] transition hover:shadow-md`}
           value={schoolId}
           onChange={(e) => setSchoolId(e.target.value)}
           required
@@ -212,8 +212,10 @@ function SignupForm() {
 
       <button
         type="submit"
-        className={`w-full py-3 rounded-lg text-white font-semibold transition ${
-          isProcessing ? "bg-gray-400" : "bg-[#2772A0] hover:bg-[#1f5b80]"
+        className={`w-full py-3 rounded-xl text-white font-semibold transition-all duration-300 shadow-md ${
+          isProcessing
+            ? "bg-gray-400"
+            : "bg-[#2772A0] hover:bg-[#1f5b80] hover:shadow-lg hover:scale-[1.02]"
         }`}
         disabled={isProcessing}
       >
@@ -223,7 +225,7 @@ function SignupForm() {
       <button
         type="button"
         onClick={() => alert("Google signup coming soon!")}
-        className="w-full py-3 rounded-lg border flex items-center justify-center gap-2 hover:bg-gray-50 transition"
+        className="w-full py-3 rounded-xl border border-gray-300 bg-white/90 flex items-center justify-center gap-2 hover:bg-gray-100 transition-all duration-300 shadow-sm hover:shadow-md"
       >
         <FcGoogle size={22} /> Sign up with Google
       </button>
@@ -283,8 +285,10 @@ function LoginForm() {
 
       <button
         type="submit"
-        className={`w-full py-3 rounded-lg text-white font-semibold transition ${
-          isLoading ? "bg-gray-400" : "bg-[#2772A0] hover:bg-[#1f5b80]"
+        className={`w-full py-3 rounded-xl text-white font-semibold transition-all duration-300 shadow-md ${
+          isLoading
+            ? "bg-gray-400"
+            : "bg-[#2772A0] hover:bg-[#1f5b80] hover:shadow-lg hover:scale-[1.02]"
         }`}
         disabled={isLoading}
       >
@@ -294,7 +298,7 @@ function LoginForm() {
       <button
         type="button"
         onClick={() => alert("Google login coming soon!")}
-        className="w-full py-3 rounded-lg border flex items-center justify-center gap-2 hover:bg-gray-50 transition"
+        className="w-full py-3 rounded-xl border border-gray-300 bg-white/90 flex items-center justify-center gap-2 hover:bg-gray-100 transition-all duration-300 shadow-sm hover:shadow-md"
       >
         <FcGoogle size={22} /> Log in with Google
       </button>
@@ -329,7 +333,7 @@ const LoginPage = () => {
       }}
     >
       {/* CARD */}
-      <div className="backdrop-blur-md bg-white/70 shadow-lg rounded-2xl p-8 w-full max-w-md mt-10 mb-16 border border-white/30">
+      <div className="backdrop-blur-lg bg-white/95 shadow-2xl rounded-3xl p-10 w-full max-w-md mt-10 mb-16 border border-white/40">
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <img src={logo} alt="EduChainAI Logo" className="h-14 w-14" />
@@ -361,7 +365,7 @@ const LoginPage = () => {
 
         {tab === "login" ? <LoginForm /> : <SignupForm />}
 
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-sm text-gray-500 mt-6">
           © {new Date().getFullYear()} EduChainAI. All rights reserved.
         </p>
       </div>
