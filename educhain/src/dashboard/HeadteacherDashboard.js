@@ -11,8 +11,8 @@ import SchoolOverview from "../components/SchoolOverview";
 import StudentList from "../components/StudentList";
 import StudentDetail from "../components/StudentDetail";
 import ChatInterface from "../components/chat/TeacherChatInterface";
-import InventoryManagement from "../dashboard/InventoryManagement"; // Corrected import path
-import AIAnalytics from "../dashboard/AIAnalytics"; // NEW IMPORT
+import InventoryManagement from "../dashboard/InventoryManagement";
+import AIAnalytics from "../dashboard/AIAnalytics";
 import {
   Users,
   ClipboardCheck,
@@ -27,20 +27,9 @@ import {
   BookOpen,
   Brain,
   Target,
-  Package, // NEW IMPORT
+  Package,
 } from "lucide-react";
 import logo from "../assets/logo.png";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-} from "recharts";
 
 const HeadteacherDashboard = () => {
   const { user, logout } = useAuth();
@@ -67,7 +56,7 @@ const HeadteacherDashboard = () => {
     loadData();
   }, [user]);
 
-  // close menu if clicked outside
+  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setIsMenuOpen(false);
@@ -76,26 +65,12 @@ const HeadteacherDashboard = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const statsData = [
-    { name: "Mon", attendance: 92 },
-    { name: "Tue", attendance: 90 },
-    { name: "Wed", attendance: 94 },
-    { name: "Thu", attendance: 89 },
-    { name: "Fri", attendance: 95 },
-  ];
-
-  const performanceData = [
-    { term: "Term 1", avg: 75 },
-    { term: "Term 2", avg: 78 },
-    { term: "Term 3", avg: 82 },
-  ];
-
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "resource", label: "Resource Management", icon: FileText },
     { id: "finance", label: "Finance", icon: Banknote },
-    { id: "inventory", label: "Inventory Management", icon: Package }, // NEW TAB
-    { id: "analytics", label: "AI Analytics", icon: Brain }, // NEW TAB
+    { id: "inventory", label: "Inventory Management", icon: Package },
+    { id: "analytics", label: "AI Analytics", icon: Brain },
     { id: "timetable", label: "Timetable Oversight", icon: CalendarDays },
     { id: "leave", label: "Leave Management", icon: ClipboardCheck },
     { id: "evaluation", label: "Teacher Evaluation", icon: BookOpen },
@@ -131,7 +106,11 @@ const HeadteacherDashboard = () => {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden hover:bg-[#E2ECF3] p-2 rounded-full transition"
           >
-            {isMenuOpen ? <X size={24} className="text-[#2772A0]" /> : <Menu size={24} className="text-[#2772A0]" />}
+            {isMenuOpen ? (
+              <X size={24} className="text-[#2772A0]" />
+            ) : (
+              <Menu size={24} className="text-[#2772A0]" />
+            )}
           </button>
 
           {/* Chat */}
@@ -220,74 +199,6 @@ const HeadteacherDashboard = () => {
         {/* OVERVIEW */}
         {tab === "overview" && (
           <div className="space-y-8">
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
-                <Users className="text-[#2772A0] mb-2" />
-                <h3 className="text-gray-600">Total Students</h3>
-                <p className="text-2xl font-bold text-[#1E293B]">{data?.students?.total || 0}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
-                <BookOpen className="text-[#2772A0] mb-2" />
-                <h3 className="text-gray-600">Total Teachers</h3>
-                <p className="text-2xl font-bold text-[#1E293B]">{data?.teachers?.total || 0}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
-                <ClipboardCheck className="text-[#2772A0] mb-2" />
-                <h3 className="text-gray-600">Attendance Rate</h3>
-                <p className="text-2xl font-bold text-[#1E293B]">94%</p>
-              </div>
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
-                <Target className="text-[#2772A0] mb-2" />
-                <h3 className="text-gray-600">Ongoing Projects</h3>
-                <p className="text-2xl font-bold text-[#1E293B]">4</p>
-              </div>
-            </div>
-
-            {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-[#1E293B] font-semibold mb-4">
-                  Weekly Attendance Overview
-                </h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={statsData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis dataKey="name" stroke="#6B7280" />
-                      <YAxis stroke="#6B7280" />
-                      <Tooltip />
-                      <Line
-                        type="monotone"
-                        dataKey="attendance"
-                        stroke="#2772A0"
-                        strokeWidth={3}
-                        dot={{ r: 5 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-[#1E293B] font-semibold mb-4">
-                  Academic Performance (Avg)
-                </h3>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={performanceData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis dataKey="term" stroke="#6B7280" />
-                      <YAxis stroke="#6B7280" />
-                      <Tooltip />
-                      <Bar dataKey="avg" fill="#2772A0" radius={[6, 6, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            {/* School Overview */}
             <SchoolOverview overview={data} />
           </div>
         )}
@@ -295,17 +206,15 @@ const HeadteacherDashboard = () => {
         {/* PANELS */}
         {tab === "resource" && <ResourceApprovalPanel />}
         {tab === "finance" && <FinancePanel />}
-        {tab === "inventory" && <InventoryManagement dashboardData={data} />} {/* Pass dashboardData as prop */}
-        {tab === "analytics" && <AIAnalytics dashboardData={data} user={user} />} {/* Pass dashboardData and user as props */}
+        {tab === "inventory" && <InventoryManagement dashboardData={data} />}
+        {tab === "analytics" && <AIAnalytics dashboardData={data} user={user} />}
         {tab === "timetable" && <TimetableApprovalPanel />}
         {tab === "leave" && <LeaveApprovalPanel />}
         {tab === "evaluation" && <TeacherEvaluationPanel />}
         {tab === "planning" && <StrategicPlanningPanel />}
         {tab === "students" && (
           <div>
-            {!studentId && (
-              <StudentList onSelect={(id) => setStudentId(id)} canEdit={false} />
-            )}
+            {!studentId && <StudentList onSelect={(id) => setStudentId(id)} canEdit={false} />}
             {studentId && (
               <StudentDetail studentId={studentId} onClose={() => setStudentId(null)} />
             )}
