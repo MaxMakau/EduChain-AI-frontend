@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import logo from './assets/logo.png';
+import useThemeColor from "./hooks/useThemeColor";
 
 const colors = {
   oceanBlue: '#2772A0',
@@ -11,22 +12,34 @@ const colors = {
 };
 
 const EduChainLanding = () => {
+
   return (
     <div
       className="min-h-screen flex flex-col font-sans relative"
-      style={{ backgroundColor: colors.cloudySky, color: colors.darkText }}
+      style={{
+        background: 'linear-gradient(to bottom, #F7EEC9, #A3E2E4)',
+        color: colors.darkText,
+      }}
     >
-      {/* Header */}
-      <header className="fixed top-0 left-0 w-full h-14 bg-white shadow-sm z-50 px-4 sm:px-8 flex justify-between items-center">
+      {/* Header (Translucent Navbar over Gradient) */}
+      <header
+        className="fixed top-0 left-0 w-full h-14 z-50 px-4 sm:px-8 flex justify-between items-center backdrop-blur-md"
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.3)', // translucent layer
+          borderBottom: '1px solid rgba(255, 255, 255, 0.25)',
+        }}
+      >
         <div className="flex items-center space-x-3">
           <img src={logo} alt="EduChainAI Logo" className="w-9 h-9" />
-          <h1 className="text-lg sm:text-xl font-bold" style={{ color: colors.oceanBlue }}>
+          <h1
+            className="text-lg sm:text-xl font-bold"
+            style={{ color: colors.oceanBlue }}
+          >
             EduChainAI
           </h1>
         </div>
 
         <nav className="flex items-center space-x-4 sm:space-x-6">
-          {/* Hide Login on mobile */}
           <Link
             to="/login"
             className="hidden sm:block hover:underline font-medium"
@@ -37,8 +50,10 @@ const EduChainLanding = () => {
 
           <Link
             to="/signup"
-            className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg font-semibold text-white hover:opacity-90 transition"
-            style={{ backgroundColor: colors.oceanBlue }}
+            className="px-5 py-2.5 rounded-full font-semibold text-white transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105"
+            style={{
+              background: 'linear-gradient(90deg, #2772A0, #1A8BBF)',
+            }}
           >
             Get Started
           </Link>
@@ -46,9 +61,7 @@ const EduChainLanding = () => {
       </header>
 
       {/* Hero Section */}
-      <section
-        className="flex flex-1 flex-col justify-center items-center text-center px-6 pt-20 pb-12 sm:pt-28"
-      >
+      <section className="flex flex-1 flex-col justify-center items-center text-center px-6 pt-20 pb-12 sm:pt-28">
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -72,23 +85,21 @@ const EduChainLanding = () => {
           proactive, and accountable.
         </motion.p>
 
-        {/* Buttons: stay side-by-side even on mobile */}
+        {/* Aesthetic Buttons */}
         <div className="flex flex-row flex-wrap justify-center gap-4">
           <Link
             to="/signup"
-            className="px-8 py-3 rounded-xl font-semibold text-white hover:opacity-90 transition text-base"
-            style={{ backgroundColor: colors.oceanBlue }}
+            className="px-8 py-3 rounded-full font-semibold text-white text-base transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+            style={{
+              background: 'linear-gradient(90deg, #2772A0, #1A8BBF)',
+            }}
           >
             Sign Up
           </Link>
+
           <Link
             to="/login"
-            className="border-2 px-8 py-3 rounded-xl font-semibold hover:text-white hover:bg-[#2772A0] transition text-base"
-            style={{
-              borderColor: colors.oceanBlue,
-              color: colors.oceanBlue,
-              backgroundColor: 'transparent',
-            }}
+            className="px-8 py-3 rounded-full font-semibold border-2 border-[#2772A0] text-[#2772A0] bg-white/40 transition-all duration-300 hover:bg-[#2772A0] hover:text-white hover:shadow-lg hover:scale-105"
           >
             Sign In
           </Link>
@@ -98,10 +109,11 @@ const EduChainLanding = () => {
       {/* Footer */}
       <footer
         className="text-black text-center py-6 mt-auto text-sm"
-        style={{ backgroundColor: colors.cloudySky }}
+        style={{
+          background: 'transparent',
+        }}
       >
-        © {new Date().getFullYear()} EduChainAI — Empowering ECDE with Trust &
-        Technology.
+        © {new Date().getFullYear()} EduChainAI
       </footer>
     </div>
   );

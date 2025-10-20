@@ -1,3 +1,5 @@
+// ---------------- LOGIN & SIGNUP PAGE (Aesthetic White Form + Gradient BG) ----------------
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -5,6 +7,7 @@ import { signupUser } from "../api/auth";
 import Toast from "../components/Toast";
 import { FcGoogle } from "react-icons/fc";
 import logo from "../assets/logo.png";
+import useThemeColor from "../hooks/useThemeColor";
 
 const colors = {
   oceanBlue: "#2772A0",
@@ -13,21 +16,15 @@ const colors = {
   darkText: "#1E293B",
 };
 
-const LOGIN_ROLES = [
-  { value: "HEADTEACHER", label: "Headteacher" },
-  { value: "TEACHER", label: "Teacher" },
-  { value: "OFFICER", label: "County Officer" },
-];
-
-// Reusable input component
+// ---------------------------------- INPUT COMPONENT ----------------------------------
 const Input = (props) => (
   <input
     {...props}
-    className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${colors.oceanBlue}] focus:border-transparent outline-none transition`}
+    className={`w-full p-3 border border-gray-200 bg-white rounded-xl shadow-sm focus:ring-2 focus:ring-[${colors.oceanBlue}] focus:border-transparent outline-none transition duration-200 hover:shadow-md`}
   />
 );
 
-// ---------------- SIGNUP FORM ----------------
+// ---------------------------------- SIGNUP FORM ----------------------------------
 function SignupForm() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -124,6 +121,12 @@ function SignupForm() {
     }
   };
 
+  const LOGIN_ROLES = [
+    { value: "HEADTEACHER", label: "Headteacher" },
+    { value: "TEACHER", label: "Teacher" },
+    { value: "OFFICER", label: "County Officer" },
+  ];
+
   return (
     <form onSubmit={handleSignup} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -159,7 +162,7 @@ function SignupForm() {
       />
 
       <select
-        className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${colors.oceanBlue}] transition`}
+        className={`w-full p-3 border border-gray-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-[${colors.oceanBlue}] transition hover:shadow-md`}
         value={role}
         onChange={(e) => setRole(e.target.value)}
         required
@@ -174,7 +177,7 @@ function SignupForm() {
 
       {role === "TEACHER" && (
         <select
-          className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[${colors.oceanBlue}] transition`}
+          className={`w-full p-3 border border-gray-200 rounded-xl bg-white shadow-sm focus:ring-2 focus:ring-[${colors.oceanBlue}] transition hover:shadow-md`}
           value={schoolId}
           onChange={(e) => setSchoolId(e.target.value)}
           required
@@ -210,8 +213,10 @@ function SignupForm() {
 
       <button
         type="submit"
-        className={`w-full py-3 rounded-lg text-white font-semibold transition ${
-          isProcessing ? "bg-gray-400" : "bg-[#2772A0] hover:bg-[#1f5b80]"
+        className={`w-full py-3 rounded-xl text-white font-semibold transition-all duration-300 shadow-md ${
+          isProcessing
+            ? "bg-gray-400"
+            : "bg-[#2772A0] hover:bg-[#1f5b80] hover:shadow-lg hover:scale-[1.02]"
         }`}
         disabled={isProcessing}
       >
@@ -221,7 +226,7 @@ function SignupForm() {
       <button
         type="button"
         onClick={() => alert("Google signup coming soon!")}
-        className="w-full py-3 rounded-lg border flex items-center justify-center gap-2 hover:bg-gray-50 transition"
+        className="w-full py-3 rounded-xl border border-gray-300 bg-white/90 flex items-center justify-center gap-2 hover:bg-gray-100 transition-all duration-300 shadow-sm hover:shadow-md"
       >
         <FcGoogle size={22} /> Sign up with Google
       </button>
@@ -235,7 +240,7 @@ function SignupForm() {
   );
 }
 
-// ---------------- LOGIN FORM ----------------
+// ---------------------------------- LOGIN FORM ----------------------------------
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -247,10 +252,10 @@ function LoginForm() {
     e.preventDefault();
     try {
       const userProfile = await login(email, password);
-
-      // ✅ Navigate based on role
       if (userProfile.role) {
-        navigate(`/dashboard/${userProfile.role.toLowerCase()}`, { replace: true });
+        navigate(`/dashboard/${userProfile.role.toLowerCase()}`, {
+          replace: true,
+        });
       } else {
         navigate("/onboarding", { replace: true });
       }
@@ -271,7 +276,6 @@ function LoginForm() {
         onChange={(e) => setEmail(e.target.value)}
         required
       />
-
       <Input
         type="password"
         placeholder="Password"
@@ -282,8 +286,10 @@ function LoginForm() {
 
       <button
         type="submit"
-        className={`w-full py-3 rounded-lg text-white font-semibold transition ${
-          isLoading ? "bg-gray-400" : "bg-[#2772A0] hover:bg-[#1f5b80]"
+        className={`w-full py-3 rounded-xl text-white font-semibold transition-all duration-300 shadow-md ${
+          isLoading
+            ? "bg-gray-400"
+            : "bg-[#2772A0] hover:bg-[#1f5b80] hover:shadow-lg hover:scale-[1.02]"
         }`}
         disabled={isLoading}
       >
@@ -293,13 +299,16 @@ function LoginForm() {
       <button
         type="button"
         onClick={() => alert("Google login coming soon!")}
-        className="w-full py-3 rounded-lg border flex items-center justify-center gap-2 hover:bg-gray-50 transition"
+        className="w-full py-3 rounded-xl border border-gray-300 bg-white/90 flex items-center justify-center gap-2 hover:bg-gray-100 transition-all duration-300 shadow-sm hover:shadow-md"
       >
         <FcGoogle size={22} /> Log in with Google
       </button>
 
       <div className="text-center mt-3">
-        <a href="/forgot-password" className="text-[#2772A0] hover:underline text-sm">
+        <a
+          href="/forgot-password"
+          className="text-[#2772A0] hover:underline text-sm"
+        >
           Forgot password?
         </a>
       </div>
@@ -313,17 +322,19 @@ function LoginForm() {
   );
 }
 
-// ---------------- PAGE WRAPPER ----------------
+// ---------------------------------- PAGE WRAPPER ----------------------------------
 const LoginPage = () => {
   const [tab, setTab] = useState("login");
 
   return (
     <div
       className="min-h-screen flex flex-col justify-center items-center px-4"
-      style={{ backgroundColor: colors.cloudySky }}
+      style={{
+        background: "linear-gradient(to bottom, #F7EEC9, #A3E2E4)",
+      }}
     >
       {/* CARD */}
-      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md mt-10 mb-16">
+      <div className="backdrop-blur-lg bg-white/95 shadow-2xl rounded-3xl p-10 w-full max-w-md mt-10 mb-16 border border-white/40">
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <img src={logo} alt="EduChainAI Logo" className="h-14 w-14" />
@@ -335,7 +346,7 @@ const LoginPage = () => {
             className={`pb-2 border-b-2 transition ${
               tab === "login"
                 ? "border-[#2772A0] text-[#2772A0] font-semibold"
-                : "border-transparent text-gray-500"
+                : "border-transparent text-gray-600 hover:text-[#2772A0]"
             }`}
             onClick={() => setTab("login")}
           >
@@ -345,7 +356,7 @@ const LoginPage = () => {
             className={`pb-2 border-b-2 transition ${
               tab === "signup"
                 ? "border-[#2772A0] text-[#2772A0] font-semibold"
-                : "border-transparent text-gray-500"
+                : "border-transparent text-gray-600 hover:text-[#2772A0]"
             }`}
             onClick={() => setTab("signup")}
           >

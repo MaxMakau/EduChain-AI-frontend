@@ -4,261 +4,214 @@ import { fetchStudents, addStudentAttendance, fetchTodayAttendance } from '../ap
 const AttendanceForm = () => {
   const [students, setStudents] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
-  const [pendingChanges, setPendingChanges] = useState({}); // Store local changes before submission
+  const [pendingChanges, setPendingChanges] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
     loadData();
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const loadData = async () => {
     try {
       const studentsData = await fetchStudents();
       setStudents(studentsData);
-      
-      // Try to fetch today's attendance, but don't fail if it doesn't work
       try {
         const todayAttendance = await fetchTodayAttendance();
-        console.log('Today attendance data:', todayAttendance);
         setAttendanceRecords(Array.isArray(todayAttendance) ? todayAttendance : []);
-      } catch (attendanceError) {
-        console.warn('Could not load today\'s attendance:', attendanceError);
+      } catch {
         setAttendanceRecords([]);
       }
-    } catch (error) {
+    } catch {
       setMessage('Failed to load students data.');
-      console.error(error);
       setAttendanceRecords([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getAttendanceStatus = (studentId) => {
-    // First check if there's a pending change
-    if (pendingChanges[studentId]) {
-      return pendingChanges[studentId];
-    }
-    
-    // Then check existing records
-    if (!Array.isArray(attendanceRecords)) {
-      return null;
-    }
-    const record = attendanceRecords.find(r => r.student === studentId);
-    return record ? record.status : null;
-  };
+  const getAttendanceStatus = (studentId) => pendingChanges[studentId] || attendanceRecords.find(r => r.student === studentId)?.status || null;
 
   const handleAttendanceChange = (studentId, status) => {
     setMessage('');
-    
-    // Update pending changes instead of making immediate API call
-    setPendingChanges(prev => ({
-      ...prev,
-      [studentId]: status
-    }));
-    
+    setPendingChanges(prev => ({ ...prev, [studentId]: status }));
     setMessage(`Marked ${students.find(s => s.id === studentId)?.first_name} as ${status}. Click "Submit Attendance" to save all changes.`);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'PRESENT': return '#28a745';
-      case 'ABSENT': return '#dc3545';
-      default: return '#6c757d';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'PRESENT': return 'Present';
-      case 'ABSENT': return 'Absent';
-      default: return 'Not Marked';
-    }
-  };
+  const getStatusColor = (status) => status === 'PRESENT' ? '#28a745' : status === 'ABSENT' ? '#dc3545' : '#6c757d';
+  const getStatusText = (status) => status === 'PRESENT' ? 'Present' : status === 'ABSENT' ? 'Absent' : 'Not Marked';
 
   const submitBatchAttendance = async () => {
     const changes = Object.keys(pendingChanges);
-    if (changes.length === 0) {
-      setMessage('No changes to submit.');
-      return;
-    }
-
-    setSaving(true);
-    setMessage('');
-
+    if (!changes.length) return setMessage('No changes to submit.');
+    setSaving(true); setMessage('');
     try {
-      // Submit all changes in parallel
-      const promises = changes.map(studentId => 
-        addStudentAttendance({
-          student_id: parseInt(studentId),
-          date: selectedDate,
-          status: pendingChanges[studentId]
-        })
-      );
-
-      await Promise.all(promises);
-
-      // Update local attendance records
+      await Promise.all(changes.map(studentId =>
+        addStudentAttendance({ student_id: parseInt(studentId), date: selectedDate, status: pendingChanges[studentId] })
+      ));
       setAttendanceRecords(prev => {
-        const currentRecords = Array.isArray(prev) ? prev : [];
-        const updatedRecords = [...currentRecords];
-        
+        const updatedRecords = [...(Array.isArray(prev) ? prev : [])];
         changes.forEach(studentId => {
-          const existingIndex = updatedRecords.findIndex(r => r.student === parseInt(studentId));
-          if (existingIndex >= 0) {
-            updatedRecords[existingIndex] = {
-              ...updatedRecords[existingIndex],
-              status: pendingChanges[studentId]
-            };
-          } else {
-            updatedRecords.push({
-              student: parseInt(studentId),
-              status: pendingChanges[studentId],
-              date: selectedDate
-            });
-          }
+          const idx = updatedRecords.findIndex(r => r.student === parseInt(studentId));
+          if (idx >= 0) updatedRecords[idx] = { ...updatedRecords[idx], status: pendingChanges[studentId] };
+          else updatedRecords.push({ student: parseInt(studentId), status: pendingChanges[studentId], date: selectedDate });
         });
-        
         return updatedRecords;
       });
-
-      // Clear pending changes
       setPendingChanges({});
       setMessage(`Successfully submitted attendance for ${changes.length} student(s)!`);
-    } catch (error) {
+    } catch {
       setMessage('Failed to submit attendance. Please try again.');
-      console.error(error);
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
-  const clearPendingChanges = () => {
-    setPendingChanges({});
-    setMessage('Pending changes cleared.');
+  const clearPendingChanges = () => { setPendingChanges({}); setMessage('Pending changes cleared.'); };
+
+  if (loading) return <div style={{ padding: 20 }}>Loading attendance data...</div>;
+
+  const containerStyle = {
+    padding: 20,
+    display: 'flex',
+    justifyContent: 'center'
   };
 
-  if (loading) return <div className="app-container">Loading attendance data...</div>;
+  const cardStyle = {
+    width: isMobile ? '100%' : '1000px',
+    padding: 20,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+  };
+
+  const tableWrapperStyle = {
+    overflowX: 'auto',
+    marginTop: 20
+  };
+
+  const tableStyle = {
+    width: '100%',
+    borderCollapse: 'collapse'
+  };
+
+  const thTdStyle = {
+    padding: 12,
+    textAlign: 'left',
+    borderBottom: '1px solid #ddd'
+  };
+
+  const actionButtonsStyle = {
+    display: 'flex',
+    gap: isMobile ? '4px' : '8px',
+    flexWrap: 'wrap'
+  };
+
+  const buttonStyle = (selected, color, textColor) => ({
+    backgroundColor: selected ? color : '#e9ecef',
+    color: selected ? 'white' : textColor,
+    padding: '6px 12px',
+    fontSize: '0.9rem',
+    border: selected ? '2px solid #2196f3' : '1px solid #ddd',
+    flex: isMobile ? 1 : 'unset'
+  });
+
+  const messageBoxStyle = {
+    marginBottom: 20,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: message.includes('Failed') ? '#f8d7da' : '#d4edda',
+    color: message.includes('Failed') ? '#721c24' : '#155724'
+  };
+
+  const pendingContainerStyle = {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: '#e3f2fd',
+    borderRadius: 8,
+    border: '1px solid #2196f3'
+  };
+
+  const pendingHeaderStyle = { marginBottom: 10, fontWeight: 'bold', color: '#1976d2' };
+  const pendingActionsStyle = { display: 'flex', gap: 10, flexDirection: isMobile ? 'column' : 'row' };
+
+  const emptyStateStyle = {
+    textAlign: 'center',
+    padding: 20,
+    color: '#6c757d',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    marginTop: 20
+  };
 
   return (
-    <div className="app-container">
-      <div className="card">
+    <div style={containerStyle}>
+      <div style={cardStyle}>
         <h3>Student Attendance</h3>
-        
-        <div className="input-group">
+        <div style={{ marginBottom: 20 }}>
           <label>Date</label>
-          <input 
-            type="date" 
-            value={selectedDate} 
+          <input
+            type="date"
+            value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             max={new Date().toISOString().split('T')[0]}
+            style={{ width: '100%', padding: 8, marginTop: 5, borderRadius: 6, border: '1px solid #ccc' }}
           />
         </div>
 
-        {message && (
-          <div style={{ 
-            color: message.includes('Failed') ? 'var(--color-danger)' : 'var(--color-secondary)', 
-            marginBottom: '20px',
-            padding: '10px',
-            backgroundColor: message.includes('Failed') ? '#f8d7da' : '#d4edda',
-            borderRadius: 'var(--border-radius)'
-          }}>
-            {message}
-          </div>
-        )}
+        {message && <div style={messageBoxStyle}>{message}</div>}
 
-        {/* Batch Submission Controls */}
         {Object.keys(pendingChanges).length > 0 && (
-          <div style={{ 
-            marginBottom: '20px', 
-            padding: '15px', 
-            backgroundColor: '#e3f2fd', 
-            borderRadius: 'var(--border-radius)',
-            border: '1px solid #2196f3'
-          }}>
-            <div style={{ marginBottom: '10px', fontWeight: 'bold', color: '#1976d2' }}>
-              Pending Changes ({Object.keys(pendingChanges).length} student{Object.keys(pendingChanges).length !== 1 ? 's' : ''})
+          <div style={pendingContainerStyle}>
+            <div style={pendingHeaderStyle}>
+              Pending Changes ({Object.keys(pendingChanges).length})
             </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                className="button primary" 
-                onClick={submitBatchAttendance}
-                disabled={saving}
-                style={{ padding: '8px 16px' }}
-              >
+            <div style={pendingActionsStyle}>
+              <button onClick={submitBatchAttendance} disabled={saving} style={{ padding: '8px 16px' }}>
                 {saving ? 'Submitting...' : 'Submit Attendance'}
               </button>
-              <button 
-                className="button" 
-                onClick={clearPendingChanges}
-                disabled={saving}
-                style={{ padding: '8px 16px' }}
-              >
+              <button onClick={clearPendingChanges} disabled={saving} style={{ padding: '8px 16px' }}>
                 Clear Changes
               </button>
             </div>
           </div>
         )}
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={tableWrapperStyle}>
+          <table style={tableStyle}>
             <thead>
-              <tr style={{ backgroundColor: 'var(--color-background)' }}>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Student Name</th>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Gender</th>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Current Status</th>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Actions</th>
+              <tr>
+                <th style={thTdStyle}>Student Name</th>
+                <th style={thTdStyle}>Gender</th>
+                <th style={thTdStyle}>Current Status</th>
+                <th style={thTdStyle}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {students.map(student => {
                 const currentStatus = getAttendanceStatus(student.id);
                 return (
-                  <tr key={student.id} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '12px' }}>
-                      {student.first_name} {student.last_name}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      {student.gender === 'M' ? 'Male' : student.gender === 'F' ? 'Female' : 'Other'}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <span style={{ 
-                        color: getStatusColor(currentStatus),
-                        fontWeight: 'bold'
-                      }}>
-                        {getStatusText(currentStatus)}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                  <tr key={student.id}>
+                    <td style={thTdStyle}>{student.first_name} {student.last_name}</td>
+                    <td style={thTdStyle}>{student.gender === 'M' ? 'Male' : student.gender === 'F' ? 'Female' : 'Other'}</td>
+                    <td style={thTdStyle}><span style={{ color: getStatusColor(currentStatus), fontWeight: 'bold' }}>{getStatusText(currentStatus)}</span></td>
+                    <td style={thTdStyle}>
+                      <div style={actionButtonsStyle}>
                         <button
-                          className="button"
-                          style={{
-                            backgroundColor: currentStatus === 'PRESENT' ? 'var(--color-secondary)' : '#e9ecef',
-                            color: currentStatus === 'PRESENT' ? 'white' : 'var(--color-text)',
-                            padding: '6px 12px',
-                            fontSize: '0.9rem',
-                            border: pendingChanges[student.id] === 'PRESENT' ? '2px solid #2196f3' : '1px solid #ddd'
-                          }}
                           onClick={() => handleAttendanceChange(student.id, 'PRESENT')}
                           disabled={saving}
+                          style={buttonStyle(pendingChanges[student.id] === 'PRESENT', '#28a745', '#333')}
                         >
                           Present {pendingChanges[student.id] === 'PRESENT' && '✓'}
                         </button>
                         <button
-                          className="button"
-                          style={{
-                            backgroundColor: currentStatus === 'ABSENT' ? 'var(--color-danger)' : '#e9ecef',
-                            color: currentStatus === 'ABSENT' ? 'white' : 'var(--color-text)',
-                            padding: '6px 12px',
-                            fontSize: '0.9rem',
-                            border: pendingChanges[student.id] === 'ABSENT' ? '2px solid #2196f3' : '1px solid #ddd'
-                          }}
                           onClick={() => handleAttendanceChange(student.id, 'ABSENT')}
                           disabled={saving}
+                          style={buttonStyle(pendingChanges[student.id] === 'ABSENT', '#dc3545', '#333')}
                         >
                           Absent {pendingChanges[student.id] === 'ABSENT' && '✓'}
                         </button>
@@ -271,17 +224,8 @@ const AttendanceForm = () => {
           </table>
         </div>
 
-        {students.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#6c757d' }}>
-            No students found. Add students first to manage attendance.
-          </div>
-        )}
-
-        {students.length > 0 && attendanceRecords.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '20px', color: '#6c757d', backgroundColor: '#f8f9fa', borderRadius: 'var(--border-radius)', marginTop: '20px' }}>
-            No attendance records found for today. Start marking attendance below.
-          </div>
-        )}
+        {students.length === 0 && <div style={emptyStateStyle}>No students found. Add students first.</div>}
+        {students.length > 0 && attendanceRecords.length === 0 && <div style={emptyStateStyle}>No attendance records found for today.</div>}
       </div>
     </div>
   );

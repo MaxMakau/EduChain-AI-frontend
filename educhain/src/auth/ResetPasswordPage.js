@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { resetPassword } from "../api/auth";
 import Toast from "../components/Toast";
 import logo from "../assets/logo.png";
+import useThemeColor from "../hooks/useThemeColor";
 
 const colors = {
   oceanBlue: "#2772A0",
