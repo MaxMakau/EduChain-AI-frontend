@@ -3,7 +3,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 :root {
   --color-primary: #1E90FF; /* Dodger Blue */
   --color-secondary: #3CB371; /* Medium Sea Green */
@@ -16,7 +15,8 @@
 
 body {
   margin: 0;
-  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--color-background);
@@ -24,14 +24,27 @@ body {
   min-height: 100vh;
 }
 
+/* ✅ Fixed: made .card responsive */
 .card {
   background-color: var(--color-white);
   padding: 30px;
   border-radius: var(--border-radius);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   width: 100%;
-  max-width: 400px;
-  margin: 50px auto;
+  margin: 30px auto;
+  box-sizing: border-box;
+}
+
+/* Optional: add slight width control only on smaller screens */
+@media (min-width: 768px) {
+  .card {
+    max-width: 90%;
+  }
+}
+@media (min-width: 1024px) {
+  .card {
+    max-width: 1100px;
+  }
 }
 
 .button {
@@ -64,7 +77,8 @@ body {
   font-weight: 500;
 }
 
-.input-group input, .input-group select {
+.input-group input,
+.input-group select {
   width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
@@ -83,22 +97,25 @@ body {
 }
 
 .input {
-  @apply w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue transition;
+  @apply w-full px-4 py-2 border border-gray-200 rounded-lg 
+  focus:outline-none focus:ring-2 focus:ring-oceanBlue transition;
 }
 
 .btn-primary {
-  @apply bg-oceanBlue text-white py-2 px-4 rounded-lg hover:bg-[#1E5B7E] transition font-medium flex justify-center items-center;
+  @apply bg-oceanBlue text-white py-2 px-4 rounded-lg 
+  hover:bg-[#1E5B7E] transition font-medium flex justify-center items-center;
 }
 
 .btn-google {
-  @apply flex justify-center items-center gap-2 py-2 px-4 border border-gray-300 rounded-lg text-darkText hover:bg-gray-50 transition;
+  @apply flex justify-center items-center gap-2 py-2 px-4 
+  border border-gray-300 rounded-lg text-darkText hover:bg-gray-50 transition;
 }
 
 .tab {
-  @apply flex-1 text-center py-2 border-b-2 border-transparent text-gray-500 font-medium cursor-pointer transition;
+  @apply flex-1 text-center py-2 border-b-2 border-transparent 
+  text-gray-500 font-medium cursor-pointer transition;
 }
 
 .tab.active {
   @apply border-oceanBlue text-oceanBlue font-semibold;
 }
-

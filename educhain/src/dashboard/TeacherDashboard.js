@@ -25,19 +25,10 @@ import {
 } from 'lucide-react';
 import ChatInterface from '../components/chat/TeacherChatInterface';
 import logo from '../assets/logo.png';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
 
 const TeacherDashboard = () => {
   const { user, logout } = useAuth();
-  const [data, setData] = useState(null);
+  const [overviewData, setOverviewData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tab, setTab] = useState('overview');
@@ -49,22 +40,24 @@ const TeacherDashboard = () => {
   const menuRef = useRef();
   const navigate = useNavigate();
 
+  // ✅ Fetch ONLY school overview data
   useEffect(() => {
-    const loadData = async () => {
+    const loadOverview = async () => {
       try {
         const result = await fetchDashboardData('TEACHER');
-        setData(result);
+        // Assuming your API returns all data but SchoolOverview is part of it
+        setOverviewData(result?.school_overview || result);
       } catch (err) {
-        setError('Failed to load dashboard data. Check API connection and role access.');
+        setError('Failed to load School Overview. Check API connection and role access.');
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    loadData();
+    loadOverview();
   }, [user, navigate]);
 
-  // Close menu when clicking outside
+  // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -75,14 +68,6 @@ const TeacherDashboard = () => {
     else document.removeEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMenuOpen]);
-
-  const statsData = [
-    { name: "Mon", attendance: 92 },
-    { name: "Tue", attendance: 89 },
-    { name: "Wed", attendance: 94 },
-    { name: "Thu", attendance: 90 },
-    { name: "Fri", attendance: 96 },
-  ];
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Users },
@@ -118,7 +103,6 @@ const TeacherDashboard = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Mobile Menu Toggle */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden hover:bg-[#E2ECF3] p-2 rounded-full transition"
@@ -126,7 +110,6 @@ const TeacherDashboard = () => {
             {isMenuOpen ? <X size={24} className="text-[#2772A0]" /> : <Menu size={24} className="text-[#2772A0]" />}
           </button>
 
-          {/* Chat (Desktop Only) */}
           <button
             onClick={() => setIsChatOpen(!isChatOpen)}
             className="hover:bg-[#E2ECF3] p-2 rounded-full transition hidden md:block"
@@ -135,7 +118,6 @@ const TeacherDashboard = () => {
             <MessageSquareText size={24} className="text-[#2772A0]" />
           </button>
 
-          {/* Logout (Desktop Only) */}
           <button
             onClick={logout}
             className="bg-[#2772A0] hover:bg-[#1f5b80] text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition hidden md:flex"
@@ -146,9 +128,7 @@ const TeacherDashboard = () => {
       </header>
 
       {/* Mobile Menu Overlay */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 bg-black/30 z-40 md:hidden"></div>
-      )}
+      {isMenuOpen && <div className="fixed inset-0 bg-black/30 z-40 md:hidden"></div>}
 
       {/* Mobile Menu Drawer */}
       <div
@@ -174,7 +154,6 @@ const TeacherDashboard = () => {
             </button>
           ))}
 
-          {/* ✅ Logout button (Mobile view) */}
           <button
             onClick={logout}
             className="flex items-center gap-2 mt-4 bg-[#2772A0] text-white px-4 py-2 rounded-md font-semibold hover:bg-[#1f5b80] transition"
@@ -197,7 +176,7 @@ const TeacherDashboard = () => {
           </p>
         </div>
 
-        {/* Tab Buttons (Desktop) */}
+        {/* Tab Buttons */}
         <div className="hidden md:flex flex-wrap justify-center gap-3 border-b border-gray-200 pb-3">
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
@@ -213,51 +192,10 @@ const TeacherDashboard = () => {
           ))}
         </div>
 
-        {/* Overview Section */}
+        {/* ✅ Overview Tab - Only fetch and show SchoolOverview */}
         {tab === 'overview' && (
           <div className="space-y-8">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
-                <Users className="text-[#2772A0] mb-2" />
-                <h3 className="text-gray-600">Total Students</h3>
-                <p className="text-2xl font-bold text-[#1E293B]">{data?.students.total || 0}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
-                <ClipboardCheck className="text-[#2772A0] mb-2" />
-                <h3 className="text-gray-600">Attendance Rate</h3>
-                <p className="text-2xl font-bold text-[#1E293B]">93%</p>
-              </div>
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
-                <FileText className="text-[#2772A0] mb-2" />
-                <h3 className="text-gray-600">Assignments</h3>
-                <p className="text-2xl font-bold text-[#1E293B]">{data?.assignments_count || 0}</p>
-              </div>
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
-                <BookOpen className="text-[#2772A0] mb-2" />
-                <h3 className="text-gray-600">Lessons This Week</h3>
-                <p className="text-2xl font-bold text-[#1E293B]">{data?.lessons_count || 0}</p>
-              </div>
-            </div>
-
-            {/* Attendance Chart */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h3 className="text-[#1E293B] font-semibold mb-4">Weekly Attendance Trend</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={statsData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis dataKey="name" stroke="#6B7280" />
-                    <YAxis stroke="#6B7280" />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="attendance" stroke="#2772A0" strokeWidth={3} dot={{ r: 5 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* School Overview */}
-            <SchoolOverview overview={data} />
+            <SchoolOverview overview={overviewData} />
           </div>
         )}
 
@@ -269,7 +207,7 @@ const TeacherDashboard = () => {
         {tab === 'resource' && <ResourceRequestForm />}
         {tab === 'pdlog' && <ProfessionalDevelopmentLog />}
 
-        {/* Students Section */}
+        {/* Students Tab */}
         {tab === 'students' && (
           <div>
             {!showForm && !showDetail && (
