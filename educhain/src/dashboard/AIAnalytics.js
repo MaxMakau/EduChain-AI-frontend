@@ -250,8 +250,14 @@ const AIAnalytics = ({ user }) => {
                 </div>
                 {insight.context_data && Object.keys(insight.context_data).length > 0 && (
                   <div className="mt-2 text-xs text-gray-500">
-                    <p className="font-semibold">Context Data:</p>
-                    <pre className="whitespace-pre-wrap">{JSON.stringify(insight.context_data, null, 2)}</pre>
+                    <p className="font-semibold mb-1">Context Data:</p>
+                    <ul className="list-disc list-inside ml-2">
+                      {Object.entries(insight.context_data).map(([key, value]) => (
+                        <li key={key} className="text-gray-600">
+                          <span className="font-medium capitalize">{key.replace(/_/g, ' ')}:</span> {String(value)}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>
