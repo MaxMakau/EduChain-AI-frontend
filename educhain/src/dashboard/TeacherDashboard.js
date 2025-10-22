@@ -1,266 +1,387 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { fetchDashboardData } from '../api/dashboard';
-import { useNavigate } from 'react-router-dom';
-import SchoolTimetableAndRoster from '../components/SchoolTimetableAndRoster';
-import LeaveRequestForm from '../components/LeaveRequestForm';
-import ResourceRequestForm from '../components/ResourceRequestForm';
-import ProfessionalDevelopmentLog from '../components/ProfessionalDevelopmentLog';
-import SchoolOverview from '../components/SchoolOverview';
-import StudentList from '../components/StudentList';
-import StudentForm from '../components/StudentForm';
-import StudentDetail from '../components/StudentDetail';
-import AttendanceForm from '../components/AttendanceForm';
-import BatchAssessmentForm from '../components/BatchAssessmentForm';
+import React, { useEffect, useState } from "react";
+import styled, { ThemeProvider, keyframes } from "styled-components";
+import { useAuth } from "../context/AuthContext";
+import { fetchDashboardData } from "../api/dashboard";
 import {
-  MessageSquareText,
+  Bell,
+  Search,
   LogOut,
   Users,
   ClipboardCheck,
   FileText,
   CalendarDays,
   BookOpen,
+  Home,
   Menu,
   X,
-} from 'lucide-react';
-import ChatInterface from '../components/chat/TeacherChatInterface';
-import logo from '../assets/logo.png';
+} from "lucide-react";
+
+import SchoolOverview from "../components/SchoolOverview";
+import AttendanceForm from "../components/AttendanceForm";
+import BatchAssessmentForm from "../components/BatchAssessmentForm";
+import SchoolTimetableAndRoster from "../components/SchoolTimetableAndRoster";
+import LeaveRequestForm from "../components/LeaveRequestForm";
+import ResourceRequestForm from "../components/ResourceRequestForm";
+import ProfessionalDevelopmentLog from "../components/ProfessionalDevelopmentLog";
+import StudentList from "../components/StudentList";
+import ChatInterface from "../components/chat/TeacherChatInterface";
+import logo from "../assets/logo.png";
+
+const theme = {
+  colors: {
+    gradientStart: "#F6EFC9",
+    gradientEnd: "#C8F3F1",
+    primary: "#2563EB",
+    primaryLight: "#3B82F6",
+    primaryGradient: "linear-gradient(90deg,#2b6be6,#3b82f6)",
+    background: "#F8FAFC",
+    white: "#FFFFFF",
+    textDark: "#0f172a",
+    textMuted: "#64748B",
+  },
+  radius: { pill: "999px" },
+  transition: "all 220ms cubic-bezier(.2,.9,.2,1)",
+};
+
+const pop = keyframes`
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const DashboardLayout = styled.div`
+  display: flex;
+  height: 100vh;
+  background: linear-gradient(
+    to bottom,
+    ${({ theme }) => theme.colors.gradientStart},
+    ${({ theme }) => theme.colors.gradientEnd}
+  );
+  overflow: hidden;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+`;
+
+const Sidebar = styled.aside`
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  padding: 18px;
+  box-sizing: border-box;
+  transition: ${({ theme }) => theme.transition};
+
+  @media (max-width: 900px) {
+    position: fixed;
+    top: 0;
+    left: ${({ $open }) => ($open ? "0" : "-280px")};
+    height: 100vh;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(3px);
+  }
+`;
+
+const SidebarHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+
+  img {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: white;
+  }
+
+  h1 {
+    font-size: 16px;
+    font-weight: 800;
+    color: ${({ theme }) => theme.colors.textDark};
+  }
+
+  @media (max-width: 900px) {
+    h1 {
+      display: none;
+    }
+  }
+`;
+
+const SidebarCurved = styled.div`
+  margin-top: 14px;
+  flex: 1;
+  width: 100%;
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  border-top-right-radius: 48px;
+  border-bottom-right-radius: 0;
+  padding: 20px 18px;
+  box-shadow: 6px 10px 36px rgba(37, 99, 235, 0.14);
+  position: relative;
+  animation: ${pop} 300ms ease both;
+`;
+
+const SidebarMenu = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+`;
+
+const NavItem = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  background: ${({ active, theme }) =>
+    active ? theme.colors.primaryGradient : "transparent"};
+  color: ${({ active }) => (active ? "#fff" : "rgba(255,255,255,0.9)")};
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  border: none;
+  border-radius: ${({ active }) =>
+    active ? "12px 28px 28px 12px" : "10px 0 0 10px"};
+  cursor: pointer;
+  transition: ${({ theme }) => theme.transition};
+  box-shadow: ${({ active }) =>
+    active ? "0 10px 30px rgba(43,107,230,0.18)" : "none"};
+  overflow: hidden;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primaryLight};
+    color: white;
+    transform: translateX(4px);
+  }
+
+  svg {
+    flex-shrink: 0;
+    min-width: 18px;
+  }
+`;
+
+const LogoutButton = styled(NavItem)`
+  margin-top: auto;
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const Main = styled.main`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const Topbar = styled.header`
+  height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: transparent;
+  z-index: 2;
+`;
+
+const TopbarInner = styled.div`
+  width: 100%;
+  background: ${({ theme }) => theme.colors.white};
+  border-radius: 14px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 30px rgba(12, 28, 51, 0.06);
+
+  @media (max-width: 600px) {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+`;
+
+const Hamburger = styled.div`
+  display: none;
+  cursor: pointer;
+
+  @media (max-width: 900px) {
+    display: block;
+  }
+`;
+
+const SearchBar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: ${({ theme }) => theme.colors.background};
+  border-radius: 12px;
+  padding: 10px 14px;
+  flex: 1;
+  max-width: 720px;
+
+  input {
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    color: ${({ theme }) => theme.colors.textDark};
+    font-size: 14px;
+  }
+`;
+
+const TopRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+
+  .icon {
+    cursor: pointer;
+    color: ${({ theme }) => theme.colors.textDark};
+    padding: 8px;
+    border-radius: 8px;
+    transition: ${({ theme }) => theme.transition};
+    &:hover {
+      background: rgba(37, 99, 235, 0.08);
+      color: ${({ theme }) => theme.colors.primary};
+    }
+  }
+
+  .profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: ${({ theme }) => theme.colors.background};
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+
+  .avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: ${({ theme }) => theme.colors.primary};
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+  }
+
+  .teacherName {
+    font-weight: 700;
+    color: ${({ theme }) => theme.colors.textDark};
+  }
+`;
+
+const Content = styled.section`
+  flex: 1;
+  overflow-y: auto;
+  padding: 26px 20px;
+`;
 
 const TeacherDashboard = () => {
   const { user, logout } = useAuth();
+  const [tab, setTab] = useState("overview");
   const [overviewData, setOverviewData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [tab, setTab] = useState('overview');
-  const [studentId, setStudentId] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [showDetail, setShowDetail] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef();
-  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // ✅ Fetch ONLY school overview data
+  const tabs = [
+    { id: "overview", label: "Overview", icon: Home },
+    { id: "students", label: "Students", icon: Users },
+    { id: "attendance", label: "Attendance", icon: ClipboardCheck },
+    { id: "assessments", label: "Assessments", icon: FileText },
+    { id: "timetable", label: "Timetable", icon: CalendarDays },
+    { id: "leave", label: "Leave", icon: ClipboardCheck },
+    { id: "resource", label: "Resources", icon: FileText },
+    { id: "pdlog", label: "Dev Log", icon: BookOpen },
+  ];
+
   useEffect(() => {
     const loadOverview = async () => {
       try {
-        const result = await fetchDashboardData('TEACHER');
-        // Assuming your API returns all data but SchoolOverview is part of it
-        setOverviewData(result?.school_overview || result);
-      } catch (err) {
-        setError('Failed to load School Overview. Check API connection and role access.');
-        console.error(err);
-      } finally {
-        setLoading(false);
+        const data = await fetchDashboardData("TEACHER");
+        setOverviewData(data?.school_overview || data);
+      } catch (error) {
+        console.error("Error fetching overview:", error);
       }
     };
     loadOverview();
-  }, [user, navigate]);
-
-  // Close mobile menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setIsMenuOpen(false);
-      }
-    };
-    if (isMenuOpen) document.addEventListener('mousedown', handleClickOutside);
-    else document.removeEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isMenuOpen]);
-
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: Users },
-    { id: 'students', label: 'Students', icon: Users },
-    { id: 'attendance', label: 'Attendance', icon: ClipboardCheck },
-    { id: 'assessments', label: 'Assessments', icon: FileText },
-    { id: 'timetable', label: 'Timetable', icon: CalendarDays },
-    { id: 'leave', label: 'Leave Request', icon: ClipboardCheck },
-    { id: 'resource', label: 'Resource Request', icon: FileText },
-    { id: 'pdlog', label: 'Professional Development', icon: BookOpen },
-  ];
-
-  if (loading)
-    return (
-      <div className="flex justify-center items-center h-screen text-[#2772A0] font-semibold">
-        Loading Teacher Dashboard...
-      </div>
-    );
-  if (error)
-    return (
-      <div className="flex justify-center items-center h-screen text-red-500 font-semibold">
-        {error}
-      </div>
-    );
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#F7FAFC] flex flex-col">
-      {/* Header */}
-      <header className="fixed top-0 left-0 w-full bg-white/80 backdrop-blur-md shadow-md z-50 px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="EduChain Logo" className="h-10 w-10 rounded-full" />
-          <h1 className="text-[#2772A0] font-bold text-lg">Teacher Dashboard</h1>
-        </div>
+    <ThemeProvider theme={theme}>
+      <DashboardLayout>
+        <Sidebar $open={sidebarOpen}>
+          <SidebarHeader>
+            <img src={logo} alt="Logo" />
+            <h1>EduChain AI</h1>
+          </SidebarHeader>
 
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden hover:bg-[#E2ECF3] p-2 rounded-full transition"
-          >
-            {isMenuOpen ? <X size={24} className="text-[#2772A0]" /> : <Menu size={24} className="text-[#2772A0]" />}
-          </button>
-
-          <button
-            onClick={() => setIsChatOpen(!isChatOpen)}
-            className="hover:bg-[#E2ECF3] p-2 rounded-full transition hidden md:block"
-            title="Open Chat"
-          >
-            <MessageSquareText size={24} className="text-[#2772A0]" />
-          </button>
-
-          <button
-            onClick={logout}
-            className="bg-[#2772A0] hover:bg-[#1f5b80] text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition hidden md:flex"
-          >
-            <LogOut size={18} /> Logout
-          </button>
-        </div>
-      </header>
-
-      {/* Mobile Menu Overlay */}
-      {isMenuOpen && <div className="fixed inset-0 bg-black/30 z-40 md:hidden"></div>}
-
-      {/* Mobile Menu Drawer */}
-      <div
-        ref={menuRef}
-        className={`fixed top-16 left-0 w-64 bg-white shadow-md z-50 p-4 transform transition-transform duration-300 md:hidden ${
-          isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex flex-col gap-2">
-          {tabs.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => {
-                setTab(id);
-                setIsMenuOpen(false);
-              }}
-              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition ${
-                tab === id ? 'bg-[#2772A0] text-white' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Icon size={18} />
-              {label}
-            </button>
-          ))}
-
-          <button
-            onClick={logout}
-            className="flex items-center gap-2 mt-4 bg-[#2772A0] text-white px-4 py-2 rounded-md font-semibold hover:bg-[#1f5b80] transition"
-          >
-            <LogOut size={18} />
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <main className="mt-24 px-4 sm:px-8 md:px-10 flex flex-col gap-8 pb-10 transition-all">
-        {/* Welcome */}
-        <div>
-          <h2 className="text-2xl font-bold text-[#1E293B]">
-            Welcome, {user?.first_name || 'Teacher'} 👋
-          </h2>
-          <p className="text-gray-500 mt-1">
-            Manage your classes, attendance, and professional logs efficiently.
-          </p>
-        </div>
-
-        {/* Tab Buttons */}
-        <div className="hidden md:flex flex-wrap justify-center gap-3 border-b border-gray-200 pb-3">
-          {tabs.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setTab(id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition ${
-                tab === id ? 'bg-[#2772A0] text-white shadow-md' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Icon size={16} />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* ✅ Overview Tab - Only fetch and show SchoolOverview */}
-        {tab === 'overview' && (
-          <div className="space-y-8">
-            <SchoolOverview overview={overviewData} />
-          </div>
-        )}
-
-        {/* Other Tabs */}
-        {tab === 'attendance' && <AttendanceForm />}
-        {tab === 'assessments' && <BatchAssessmentForm />}
-        {tab === 'timetable' && <SchoolTimetableAndRoster />}
-        {tab === 'leave' && <LeaveRequestForm />}
-        {tab === 'resource' && <ResourceRequestForm />}
-        {tab === 'pdlog' && <ProfessionalDevelopmentLog />}
-
-        {/* Students Tab */}
-        {tab === 'students' && (
-          <div>
-            {!showForm && !showDetail && (
-              <>
-                <button
-                  className="bg-[#2772A0] text-white px-4 py-2 rounded-lg font-medium mb-4 hover:bg-[#1f5b80] transition"
+          <SidebarCurved>
+            <SidebarMenu>
+              {tabs.map(({ id, label, icon: Icon }) => (
+                <NavItem
+                  key={id}
+                  active={tab === id}
                   onClick={() => {
-                    setStudentId(null);
-                    setShowForm(true);
+                    setTab(id);
+                    setSidebarOpen(false);
                   }}
                 >
-                  + Add Student
-                </button>
-                <StudentList
-                  onSelect={(id, edit) => {
-                    if (edit) {
-                      setStudentId(id);
-                      setShowForm(true);
-                    } else {
-                      setStudentId(id);
-                      setShowDetail(true);
-                    }
-                  }}
-                  canEdit={true}
-                />
-              </>
-            )}
-            {showForm && (
-              <StudentForm
-                studentId={studentId}
-                onSuccess={() => {
-                  setShowForm(false);
-                  setStudentId(null);
-                }}
-                onCancel={() => setShowForm(false)}
-              />
-            )}
-            {showDetail && (
-              <StudentDetail
-                studentId={studentId}
-                onClose={() => {
-                  setShowDetail(false);
-                  setStudentId(null);
-                }}
-              />
-            )}
-          </div>
-        )}
-      </main>
+                  <Icon size={18} />
+                  <span>{label}</span>
+                </NavItem>
+              ))}
+              <LogoutButton onClick={logout}>
+                <LogOut size={18} />
+                <span>Logout</span>
+              </LogoutButton>
+            </SidebarMenu>
+          </SidebarCurved>
+        </Sidebar>
 
-      {/* Chat */}
-      <ChatInterface isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
-    </div>
+        <Main>
+          <Topbar>
+            <TopbarInner>
+              <Hamburger onClick={() => setSidebarOpen(!sidebarOpen)}>
+                {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+              </Hamburger>
+
+              <SearchBar>
+                <Search size={18} color="#64748B" />
+                <input placeholder="Search..." />
+              </SearchBar>
+
+              <TopRight>
+                <button className="icon" aria-label="notifications">
+                  <Bell size={20} />
+                </button>
+
+                <div className="profile">
+                  <div className="avatar">{user?.first_name?.[0] ?? "T"}</div>
+                  <div className="teacherName">{user?.first_name ?? "Teacher"}</div>
+                </div>
+              </TopRight>
+            </TopbarInner>
+          </Topbar>
+
+          <Content>
+            {tab === "overview" && <SchoolOverview overview={overviewData} />}
+            {tab === "attendance" && <AttendanceForm />}
+            {tab === "assessments" && <BatchAssessmentForm />}
+            {tab === "timetable" && <SchoolTimetableAndRoster />}
+            {tab === "leave" && <LeaveRequestForm />}
+            {tab === "resource" && <ResourceRequestForm />}
+            {tab === "pdlog" && <ProfessionalDevelopmentLog />}
+            {tab === "students" && <StudentList canEdit />}
+          </Content>
+        </Main>
+
+        <ChatInterface isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      </DashboardLayout>
+    </ThemeProvider>
   );
 };
 

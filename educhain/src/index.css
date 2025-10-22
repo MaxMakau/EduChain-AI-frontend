@@ -1,18 +1,33 @@
-/* Global Styles for EduChain AI App */
+/* ================================
+   🌊 EduChain AI Global Styles
+   ================================ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Theme Variables */
 :root {
-  --color-primary: #1E90FF; /* Dodger Blue */
-  --color-secondary: #3CB371; /* Medium Sea Green */
-  --color-text: #333;
-  --color-background: #f8f8f8;
-  --color-white: #fff;
-  --color-danger: #e74c3c;
-  --border-radius: 8px;
+  /* Core Colors */
+  --color-primary: #2772A0; /* Ocean Blue */
+  --color-secondary: #CCDDEA; /* Cloudy Sky */
+  --color-accent: #1E90FF; /* Dodger Blue fallback */
+  --color-text: #1E293B; /* Neutral text */
+  --color-background: #F8FAFC; /* Light background */
+  --color-white: #FFFFFF;
+  --color-danger: #E74C3C;
+
+  /* UI */
+  --border-radius: 10px;
+  --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* Gradient */
+  --theme-gradient: linear-gradient(180deg, #CCDDEA 0%, #2772A0 100%);
 }
 
+/* ================================
+   🌐 Global Body
+   ================================ */
 body {
   margin: 0;
   font-family: 'Inter', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 
@@ -24,49 +39,75 @@ body {
   min-height: 100vh;
 }
 
-/* ✅ Fixed: made .card responsive */
+/* ================================
+   📦 Cards
+   ================================ */
 .card {
   background-color: var(--color-white);
   padding: 30px;
   border-radius: var(--border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-light);
   width: 100%;
   margin: 30px auto;
   box-sizing: border-box;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Optional: add slight width control only on smaller screens */
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive card widths */
 @media (min-width: 768px) {
   .card {
     max-width: 90%;
   }
 }
+
 @media (min-width: 1024px) {
   .card {
     max-width: 1100px;
   }
 }
 
+/* ================================
+   🔘 Buttons
+   ================================ */
 .button {
   padding: 10px 20px;
   border: none;
   border-radius: var(--border-radius);
   cursor: pointer;
   font-weight: 600;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
   width: 100%;
   margin-top: 15px;
 }
 
 .button.primary {
-  background-color: var(--color-primary);
+  background: var(--theme-gradient);
   color: var(--color-white);
+  box-shadow: var(--shadow-light);
 }
 
 .button.primary:hover {
-  background-color: #1c7ed6;
+  opacity: 0.9;
+  transform: scale(1.02);
 }
 
+.button.danger {
+  background-color: var(--color-danger);
+  color: var(--color-white);
+}
+
+.button.danger:hover {
+  background-color: #c0392b;
+}
+
+/* ================================
+   🧾 Form Elements
+   ================================ */
 .input-group {
   margin-bottom: 20px;
 }
@@ -75,6 +116,7 @@ body {
   display: block;
   margin-bottom: 5px;
   font-weight: 500;
+  color: var(--color-text);
 }
 
 .input-group input,
@@ -84,31 +126,49 @@ body {
   border: 1px solid #ddd;
   border-radius: var(--border-radius);
   box-sizing: border-box;
+  background-color: var(--color-white);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+.input-group input:focus,
+.input-group select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 5px rgba(39, 114, 160, 0.3);
+  outline: none;
+}
+
+/* ================================
+   ⚠️ Error Messages
+   ================================ */
 .error-message {
   color: var(--color-danger);
   margin-top: 10px;
   font-size: 0.9rem;
 }
 
+/* ================================
+   📱 Containers
+   ================================ */
 .app-container {
   padding: 20px;
 }
 
+/* ================================
+   💎 Tailwind Utility Merges
+   ================================ */
 .input {
   @apply w-full px-4 py-2 border border-gray-200 rounded-lg 
-  focus:outline-none focus:ring-2 focus:ring-oceanBlue transition;
+  focus:outline-none focus:ring-2 focus:ring-[#2772A0] transition;
 }
 
 .btn-primary {
-  @apply bg-oceanBlue text-white py-2 px-4 rounded-lg 
+  @apply bg-[#2772A0] text-white py-2 px-4 rounded-lg 
   hover:bg-[#1E5B7E] transition font-medium flex justify-center items-center;
 }
 
 .btn-google {
   @apply flex justify-center items-center gap-2 py-2 px-4 
-  border border-gray-300 rounded-lg text-darkText hover:bg-gray-50 transition;
+  border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition;
 }
 
 .tab {
@@ -117,5 +177,13 @@ body {
 }
 
 .tab.active {
-  @apply border-oceanBlue text-oceanBlue font-semibold;
+  @apply border-[#2772A0] text-[#2772A0] font-semibold;
+}
+
+/* ================================
+   🌈 Gradient Background Helper
+   ================================ */
+.gradient-bg {
+  background: var(--theme-gradient);
+  color: var(--color-white);
 }
