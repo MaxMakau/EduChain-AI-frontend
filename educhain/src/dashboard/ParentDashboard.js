@@ -309,19 +309,17 @@ const ParentDashboard = () => {
               ) : (
                 <p>No profile data available.</p>
               )}
-          </div>
-        )}
+            </div>
+          )}
         </main>
       </div>
-      {/* The ChatInterface outside the main content for overlay */}
-      {isChatOpen && activeTab !== 'chat' && (
-        <ParentChatInterface 
-          isOpen={isChatOpen} 
-          onClose={() => setIsChatOpen(false)} 
-          uniqueTeachers={uniqueTeachers} 
-          updateTotalUnreadMessages={setTotalUnreadMessages}
-        />
-      )}
+      {/* The ChatInterface outside the main content for overlay, always rendered */}
+      <ParentChatInterface 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)} 
+        uniqueTeachers={uniqueTeachers} 
+        updateTotalUnreadMessages={setTotalUnreadMessages}
+      />
     </div>
   );
 };
