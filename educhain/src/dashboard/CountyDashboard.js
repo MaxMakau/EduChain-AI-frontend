@@ -13,6 +13,7 @@ import {
   X,
   LogOut,
   Search,
+  MapPin, // New import for Map View button
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -20,6 +21,13 @@ import axiosInstance from "../api/axiosInstance";
 import CountyOverview from "./CountyOverview";
 import logo from "../assets/logo.png";
 import AIAnalytics from "./AIAnalytics";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup
+} from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import {
   ResponsiveContainer,
   LineChart,
@@ -33,6 +41,17 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+
+import L from 'leaflet'; // Import Leaflet library for custom marker icons
+
+// Fix for default marker icon issue with Webpack
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
 
 const COLORS = {
   oceanBlue: "#2772A0",
@@ -105,6 +124,9 @@ export default function CountyDashboard() {
   const [data, setData] = useState({});
   const [search, setSearch] = useState("");
   const [expandedRows, setExpandedRows] = useState([]); // New state for expanded rows
+  const [isMapView, setIsMapView] = useState(false); // New state for toggling map view
+  const [showSchoolDetailsPopup, setShowSchoolDetailsPopup] = useState(false);
+  const [selectedSchoolDetails, setSelectedSchoolDetails] = useState(null);
   const navigate = useNavigate();
   const location = useLocation(); // Get current location
   const token = localStorage.getItem("access_token");
@@ -212,8 +234,34 @@ export default function CountyDashboard() {
     }
   };
 
+  const handleViewDetails = async (schoolCode) => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await axiosInstance.get(`/schools/${schoolCode}/`, {
+        headers: { Authorization: token ? `Bearer ${token}` : undefined },
+      });
+      setSelectedSchoolDetails(res.data);
+      setShowSchoolDetailsPopup(true);
+    } catch (err) {
+      console.error("Failed to fetch school details:", err);
+      setError(err.response?.data?.detail || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex bg-[#F8FAFC]">
+
+      {/* School Details Popup */}
+      {showSchoolDetailsPopup && selectedSchoolDetails && (
+        <SchoolDetailsPopup
+          school={selectedSchoolDetails}
+          onClose={() => setShowSchoolDetailsPopup(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         ref={sidebarRef}
@@ -339,26 +387,54 @@ export default function CountyDashboard() {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-[#2772A0]">Schools</h3>
-                    <button className="px-3 py-2 rounded-md bg-[#2772A0] text-white hover:bg-[#1f5b80]">
-                      Add School
+                    <button className="px-3 py-2 rounded-md bg-[#2772A0] text-white hover:bg-[#1f5b80]"
+                            onClick={() => setIsMapView(!isMapView)}>
+                      <MapPin size={16} className="inline-block mr-2" /> Map View
                     </button>
                   </div>
-                  <Table
-                    columns={[
-                      { key: "code", title: "Code" },
-                      { key: "name", title: "Name" },
-                      { key: "subcounty", title: "Subcounty" },
-                      { 
-                        key: "headteacher", 
-                        title: "Headteacher", 
-                        render: (row) => row.headteacher ? row.headteacher.split(' ')[0] + " " + row.headteacher.split(' ')[1].charAt(0) + "." : "N/A" 
-                      },
-                      { key: "total_teachers", title: "Teachers" },
-                      { key: "total_students", title: "Students" },
-                      { key: "assessment_average", title: "Avg. Assessments" },
-                    ]}
-                    rows={schoolsRows}
-                  />
+                  {!isMapView && (
+                    <Table
+                      columns={[
+                        { key: "code", title: "Code" },
+                        { key: "name", title: "Name" },
+                        { key: "subcounty", title: "Subcounty" },
+                        { 
+                          key: "headteacher", 
+                          title: "Headteacher", 
+                          render: (row) => row.headteacher ? row.headteacher.split(' ')[0] + " " + row.headteacher.split(' ')[1].charAt(0) + "." : "N/A" 
+                        },
+                        { key: "total_teachers", title: "Teachers" },
+                        { key: "total_students", title: "Students" },
+                        { key: "assessment_average", title: "Avg. Assessments" },
+                        {
+                          key: "actions",
+                          title: "Actions",
+                          render: (row) => (
+                            <button
+                              onClick={() => handleViewDetails(row.code)}
+                              className="px-3 py-1 text-xs rounded-md bg-[#2772A0] text-white hover:bg-[#1f5b80]"
+                            >
+                              View
+                            </button>
+                          ),
+                        },
+                      ]}
+                      rows={schoolsRows}
+                    />
+                  )}
+                </motion.section>
+              )}
+
+              {activeTab === "schools" && isMapView && (
+                <motion.section
+                  key="schools-map-view"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="h-[600px] w-full"
+                >
+                  <h3 className="text-lg font-semibold text-[#2772A0] mb-4">Schools Map View</h3>
+                  <MapView schools={schoolsRows} handleMarkerClick={handleViewDetails} />
                 </motion.section>
               )}
 
@@ -437,3 +513,83 @@ export default function CountyDashboard() {
     </div>
   );
 }
+
+// New SchoolDetailsPopup Component
+const SchoolDetailsPopup = ({ school, onClose }) => {
+  if (!school) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[999] p-4">
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md animate-fade-in-up relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+        >
+          <X size={20} />
+        </button>
+        <h2 className="text-xl font-bold text-[#2772A0] mb-4">School Details</h2>
+        <div className="space-y-2 text-sm text-gray-700">
+          <p><strong>Name:</strong> {school.name}</p>
+          <p><strong>Code:</strong> {school.code}</p>
+          <p><strong>Subcounty:</strong> {school.subcounty}</p>
+          <p><strong>Location:</strong> {school.location || "N/A"}</p>
+          <p><strong>Registered On:</strong> {new Date(school.created_at).toLocaleDateString()}</p>
+          {school.headteacher && (
+            <div className="pt-2 border-t mt-2">
+              <p className="font-semibold">Headteacher:</p>
+              <p><strong>Name:</strong> {school.headteacher.first_name} {school.headteacher.last_name}</p>
+              <p><strong>Email:</strong> {school.headteacher.email}</p>
+              <p><strong>Phone:</strong> {school.headteacher.phone_number}</p>
+            </div>
+          )}
+          <p className="pt-2 border-t mt-2"><strong>Teachers:</strong> {school.teachers.map(teacher => `${teacher.first_name} ${teacher.last_name}`).join(', ')}</p>
+          <p><strong>Total Students:</strong> {school.total_students}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// New MapView Component
+const MapView = ({ schools, handleMarkerClick }) => {
+  const defaultCenter = [-1.286389, 36.817223]; // Default to Nairobi, Kenya
+
+  const parseLocation = (locationString) => {
+    if (!locationString) return null;
+    const pointMatch = locationString.match(/POINT \(([^ ]+) ([^ ]+)\)/);
+    if (pointMatch && pointMatch.length === 3) {
+      // The database stores longitude first, then latitude in the POINT string
+      const longitude = parseFloat(pointMatch[1]);
+      const latitude = parseFloat(pointMatch[2]);
+      if (!isNaN(latitude) && !isNaN(longitude)) {
+        return { latitude, longitude };
+      }
+    }
+    return null;
+  };
+
+  return (
+    <MapContainer center={defaultCenter} zoom={10} scrollWheelZoom={false} className="h-full w-full rounded-2xl shadow-md">
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      {schools.map((school) => {
+        const parsedLocation = parseLocation(school.location);
+        if (parsedLocation) {
+          return (
+            <Marker
+              key={school.code}
+              position={[parsedLocation.latitude, parsedLocation.longitude]}
+              eventHandlers={{
+                click: () => handleMarkerClick(school.code),
+              }}
+            >
+            </Marker>
+          );
+        }
+        return null;
+      })}
+    </MapContainer>
+  );
+};

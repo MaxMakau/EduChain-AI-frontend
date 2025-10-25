@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { MapPin } from "lucide-react";
+import { MapPin, CheckCircle, XCircle } from "lucide-react";
 import logo from "../assets/logo.png";
 import useThemeColor from "../hooks/useThemeColor";
 
@@ -33,6 +33,7 @@ const RegisterSchoolPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [locationStatus, setLocationStatus] = useState('idle'); // 'idle', 'pending', 'success', 'error'
 
   useEffect(() => {
     // ✅ Change status bar color dynamically
@@ -51,8 +52,10 @@ const RegisterSchoolPage = () => {
   const getLocation = () => {
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser.");
+      setLocationStatus('error');
       return;
     }
+    setLocationStatus('pending');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setForm({
@@ -60,8 +63,12 @@ const RegisterSchoolPage = () => {
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude
         });
+        setLocationStatus('success');
       },
-      (err) => setError("Failed to get location: " + err.message)
+      (err) => {
+        setError("Failed to get location: " + err.message);
+        setLocationStatus('error');
+      }
     );
   };
 
@@ -173,36 +180,35 @@ const RegisterSchoolPage = () => {
           {/* Location */}
           <div>
             <label className="block text-sm font-medium mb-1">Location (optional)</label>
+            <p className="text-xs text-gray-500 mb-2">Please ensure you are physically at the school's location when setting this for accurate registration.</p>
             <div className="flex gap-2 flex-wrap">
-              <input
-                name="latitude"
-                value={form.latitude}
-                onChange={handleChange}
-                placeholder="Latitude"
-                type="number"
-                step="any"
-                className="flex-1 rounded-lg px-3 py-2 bg-white/60 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
-              />
-              <input
-                name="longitude"
-                value={form.longitude}
-                onChange={handleChange}
-                placeholder="Longitude"
-                type="number"
-                step="any"
-                className="flex-1 rounded-lg px-3 py-2 bg-white/60 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2772A0]"
-              />
+              
               <button
                 type="button"
                 onClick={getLocation}
-                className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-white transition"
+                className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-white transition w-full"
                 style={{
                   backgroundColor: colors.oceanBlue,
                 }}
               >
-                <MapPin size={16} /> Get
+                <MapPin size={16} /> Set School Location
               </button>
             </div>
+          {locationStatus === 'pending' && (
+            <p className="text-sm text-gray-500 mt-2 flex items-center justify-center gap-1">
+              <MapPin size={16} className="animate-pulse"/> Getting location...
+            </p>
+          )}
+          {locationStatus === 'success' && (
+            <p className="text-sm text-green-600 mt-2 flex items-center justify-center gap-1">
+              <CheckCircle size={16} /> Location set successfully!
+            </p>
+          )}
+          {locationStatus === 'error' && (
+            <p className="text-sm text-red-600 mt-2 flex items-center justify-center gap-1">
+              <XCircle size={16} /> Failed to get location.
+            </p>
+          )}
           </div>
 
           {/* Messages */}
