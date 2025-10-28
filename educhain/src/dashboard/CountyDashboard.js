@@ -7,13 +7,14 @@ import {
   School,
   ClipboardList,
   TrendingUp,
-  ChevronDown, // New import
-  ChevronUp, // New import
+  ChevronDown,
+  ChevronUp,
   Menu,
   X,
   LogOut,
   Search,
-  MapPin, // New import for Map View button
+  MapPin,
+  ArrowUpDown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -21,45 +22,23 @@ import axiosInstance from "../api/axiosInstance";
 import CountyOverview from "./CountyOverview";
 import logo from "../assets/logo.png";
 import AIAnalytics from "./AIAnalytics";
+
 import {
   MapContainer,
   TileLayer,
   Marker,
-  Popup
-} from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-} from "recharts";
-
-import L from 'leaflet'; // Import Leaflet library for custom marker icons
+  Popup as LeafletPopup,
+} from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
 // Fix for default marker icon issue with Webpack
 delete L.Icon.Default.prototype._getIconUrl;
-
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl: require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+  iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
+  iconUrl: require("leaflet/dist/images/marker-icon.png"),
+  shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
 });
-
-const COLORS = {
-  oceanBlue: "#2772A0",
-  cloudySky: "#CCDDEA",
-  bg: "#F8FAFC",
-  text: "#1E293B",
-  muted: "#6B7280",
-};
 
 const tabs = [
   { id: "overview", label: "Overview", icon: Home },
@@ -75,45 +54,8 @@ const endpoints = {
   ai_analytics: "/reports/analytics/",
 };
 
-// Small shimmer for loading
 const Shimmer = ({ className = "h-20" }) => (
   <div className={`animate-pulse bg-white rounded-2xl shadow-sm border border-gray-100 ${className}`} />
-);
-
-// Reusable table component
-const Table = ({ columns = [], rows = [] }) => (
-  <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 overflow-x-auto">
-    <table className="min-w-full text-sm table-auto">
-      <thead className="text-xs text-gray-500 text-left sticky top-0 bg-white/80">
-        <tr>
-          {columns.map((c) => (
-            <th key={c.key} className="py-2 pr-4">
-              {c.title}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.length === 0 ? (
-          <tr>
-            <td colSpan={columns.length} className="text-center py-6 text-gray-500">
-              No data available
-            </td>
-          </tr>
-        ) : (
-          rows.map((r, idx) => (
-            <tr key={idx} className="border-t">
-              {columns.map((c) => (
-                <td key={c.key} className="py-3 pr-4 align-top">
-                  {c.render ? c.render(r) : r[c.key]}
-                </td>
-              ))}
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
-  </div>
 );
 
 export default function CountyDashboard() {
@@ -127,8 +69,11 @@ export default function CountyDashboard() {
   const [isMapView, setIsMapView] = useState(false); // New state for toggling map view
   const [showSchoolDetailsPopup, setShowSchoolDetailsPopup] = useState(false);
   const [selectedSchoolDetails, setSelectedSchoolDetails] = useState(null);
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [subcountyFilter, setSubcountyFilter] = useState("");
+
   const navigate = useNavigate();
-  const location = useLocation(); // Get current location
+  const location = useLocation();
   const token = localStorage.getItem("access_token");
 
   const sidebarRef = useRef(null);
@@ -155,52 +100,47 @@ export default function CountyDashboard() {
       });
       setData((prev) => ({ ...prev, [tab]: res.data }));
     } catch (err) {
-      if (err.response?.status === 401) {
+      if (err?.response?.status === 401) {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         navigate("/login");
       } else {
-        setError(err.response?.data?.detail || err.message);
+        setError(err?.response?.data?.detail || err.message || "Failed to fetch data");
       }
     } finally {
       setLoading(false);
     }
   };
 
+  // Sync tab with URL and fetch data
   useEffect(() => {
-    // Extract the tab from the URL pathname
-    const pathSegments = location.pathname.split('/');
+    const pathSegments = location.pathname.split("/");
     const currentTab = pathSegments[pathSegments.length - 1];
 
-    // Handle the base path for overview explicitly
     if (location.pathname === "/dashboard/officer" && activeTab !== "overview") {
       setActiveTab("overview");
-    } else if (tabs.some(tab => tab.id === currentTab) && currentTab !== activeTab) {
+    } else if (tabs.some((tab) => tab.id === currentTab) && currentTab !== activeTab) {
       setActiveTab(currentTab);
-    } else if (!tabs.some(tab => tab.id === currentTab) && activeTab !== "overview") {
-      // Default to overview if no matching tab is found in URL and not already on overview
+    } else if (!tabs.some((tab) => tab.id === currentTab) && activeTab !== "overview") {
       setActiveTab("overview");
     }
 
-    // Fetch data for the active tab (either from URL or default)
+    // If AI analytics, component may fetch itself; still call fetch for others
     if (activeTab === "ai-analytics") {
-      // AIAnalytics component handles its own data fetching
       setLoading(false);
       return;
     }
     fetchTabData(activeTab);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, location.pathname]); // Depend on activeTab and location.pathname
+  }, [activeTab, location.pathname]);
 
   const schoolsRows = data.schools?.results || data.schools || [];
-  const studentsRows = data.students?.results || data.students || [];
-  const assessmentsRows = data.assessments?.results || data.assessments || [];
   const resourcesRows = data.resources?.results || data.resources || [];
 
   const toggleRowExpansion = (rowId) => {
-    setExpandedRows(prev =>
-      prev.includes(rowId) ? prev.filter(id => id !== rowId) : [...prev, rowId]
+    setExpandedRows((prev) =>
+      prev.includes(rowId) ? prev.filter((id) => id !== rowId) : [...prev, rowId]
     );
   };
 
@@ -208,14 +148,15 @@ export default function CountyDashboard() {
     try {
       setLoading(true);
       setError("");
-      await axiosInstance.patch(`/schools/resources/${resourceId}/`, { status }, {
-        headers: { Authorization: token ? `Bearer ${token}` : undefined },
-      });
-      // After successful update, re-fetch resources data to reflect the changes
+      await axiosInstance.patch(
+        `/schools/resources/${resourceId}/`,
+        { status },
+        { headers: { Authorization: token ? `Bearer ${token}` : undefined } }
+      );
       await fetchTabData("resources");
     } catch (err) {
       console.error("Failed to update resource status:", err);
-      setError(err.response?.data?.detail || err.message);
+      setError(err?.response?.data?.detail || err.message);
     } finally {
       setLoading(false);
     }
@@ -245,15 +186,45 @@ export default function CountyDashboard() {
       setShowSchoolDetailsPopup(true);
     } catch (err) {
       console.error("Failed to fetch school details:", err);
-      setError(err.response?.data?.detail || err.message);
+      setError(err?.response?.data?.detail || err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // Derived & memoized lists
+  const uniqueSubcounties = useMemo(() => {
+    const all = schoolsRows || [];
+    return [...new Set(all.map((s) => s.subcounty).filter(Boolean))].sort();
+  }, [schoolsRows]);
+
+  const filteredAndSortedSchools = useMemo(() => {
+    let list = [...(schoolsRows || [])];
+
+    if (subcountyFilter) {
+      list = list.filter((s) => s.subcounty === subcountyFilter);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (s) =>
+          (s.name || "").toLowerCase().includes(q) ||
+          (s.code || "").toLowerCase().includes(q) ||
+          (s.subcounty || "").toLowerCase().includes(q)
+      );
+    }
+
+    list.sort((a, b) => {
+      const aCode = a.code || "";
+      const bCode = b.code || "";
+      return sortOrder === "asc" ? aCode.localeCompare(bCode) : bCode.localeCompare(aCode);
+    });
+
+    return list;
+  }, [schoolsRows, subcountyFilter, search, sortOrder]);
+
   return (
     <div className="min-h-screen flex bg-[#F8FAFC]">
-
       {/* School Details Popup */}
       {showSchoolDetailsPopup && selectedSchoolDetails && (
         <SchoolDetailsPopup
@@ -387,54 +358,97 @@ export default function CountyDashboard() {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold text-[#2772A0]">Schools</h3>
-                    <button className="px-3 py-2 rounded-md bg-[#2772A0] text-white hover:bg-[#1f5b80]"
-                            onClick={() => setIsMapView(!isMapView)}>
-                      <MapPin size={16} className="inline-block mr-2" /> Map View
+                    <button
+                      className="px-3 py-2 rounded-md bg-[#2772A0] text-white hover:bg-[#1f5b80]"
+                      onClick={() => setIsMapView(!isMapView)}
+                    >
+                      <MapPin size={16} className="inline-block mr-2" /> {isMapView ? "List View" : "Map View"}
                     </button>
                   </div>
-                  {!isMapView && (
-                    <Table
-                      columns={[
-                        { key: "code", title: "Code" },
-                        { key: "name", title: "Name" },
-                        { key: "subcounty", title: "Subcounty" },
-                        { 
-                          key: "headteacher", 
-                          title: "Headteacher", 
-                          render: (row) => row.headteacher ? row.headteacher.split(' ')[0] + " " + row.headteacher.split(' ')[1].charAt(0) + "." : "N/A" 
-                        },
-                        { key: "total_teachers", title: "Teachers" },
-                        { key: "total_students", title: "Students" },
-                        { key: "assessment_average", title: "Avg. Assessments" },
-                        {
-                          key: "actions",
-                          title: "Actions",
-                          render: (row) => (
-                            <button
-                              onClick={() => handleViewDetails(row.code)}
-                              className="px-3 py-1 text-xs rounded-md bg-[#2772A0] text-white hover:bg-[#1f5b80]"
-                            >
-                              View
-                            </button>
-                          ),
-                        },
-                      ]}
-                      rows={schoolsRows}
-                    />
-                  )}
-                </motion.section>
-              )}
 
-              {activeTab === "schools" && isMapView && (
-                <motion.section
-                  key="schools-map-view"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="h-[600px] w-full"
-                >
-                  <h3 className="text-lg font-semibold text-[#2772A0] mb-4">Schools Map View</h3>
-                  <MapView schools={schoolsRows} handleMarkerClick={handleViewDetails} />
+                  {!isMapView && (
+                    <>
+                      <div className="flex flex-wrap gap-3 mb-4 items-center">
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm text-gray-600">Filter Subcounty:</label>
+                          <select
+                            value={subcountyFilter}
+                            onChange={(e) => setSubcountyFilter(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-2 py-1 text-sm"
+                          >
+                            <option value="">All</option>
+                            {uniqueSubcounties.map((sub) => (
+                              <option key={sub} value={sub}>
+                                {sub}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                            className="flex items-center gap-1 px-3 py-1 rounded-md border border-gray-300 text-sm hover:bg-gray-50"
+                          >
+                            <ArrowUpDown size={14} /> Sort by Code ({sortOrder})
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-xl shadow border border-gray-100 overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                          <thead className="text-xs bg-gray-50 text-gray-500">
+                            <tr>
+                              <th className="py-2 px-4 text-left">Code</th>
+                              <th className="py-2 px-4 text-left">Name</th>
+                              <th className="py-2 px-4 text-left">Subcounty</th>
+                              <th className="py-2 px-4 text-left">Headteacher</th>
+                              <th className="py-2 px-4 text-left">Teachers</th>
+                              <th className="py-2 px-4 text-left">Students</th>
+                              <th className="py-2 px-4 text-left">Avg. Assessment</th>
+                              <th className="py-2 px-4 text-left">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredAndSortedSchools.length === 0 ? (
+                              <tr>
+                                <td colSpan={8} className="py-6 text-center text-gray-500">
+                                  No schools found
+                                </td>
+                              </tr>
+                            ) : (
+                              filteredAndSortedSchools.map((s) => (
+                                <tr key={s.code} className="border-t hover:bg-gray-50">
+                                  <td className="py-2 px-4">{s.code}</td>
+                                  <td className="py-2 px-4">{s.name}</td>
+                                  <td className="py-2 px-4">{s.subcounty}</td>
+                                  <td className="py-2 px-4">{s.headteacher || "N/A"}</td>
+                                  <td className="py-2 px-4">{s.total_teachers ?? "—"}</td>
+                                  <td className="py-2 px-4">{s.total_students ?? "—"}</td>
+                                  <td className="py-2 px-4">{s.assessment_average ?? "—"}</td>
+                                  <td className="py-2 px-4">
+                                    <button
+                                      onClick={() => handleViewDetails(s.code)}
+                                      className="px-3 py-1 text-xs rounded-md bg-[#2772A0] text-white hover:bg-[#1f5b80]"
+                                    >
+                                      View
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
+
+                  {isMapView && (
+                    <div className="mt-4">
+                      <h3 className="text-lg font-semibold text-[#2772A0] mb-4">Schools Map View</h3>
+                      <MapView schools={filteredAndSortedSchools} handleMarkerClick={handleViewDetails} />
+                    </div>
+                  )}
                 </motion.section>
               )}
 
@@ -446,63 +460,39 @@ export default function CountyDashboard() {
                   exit={{ opacity: 0, y: -10 }}
                 >
                   <h3 className="text-lg font-semibold text-[#2772A0] mb-4">Resources</h3>
-                  <Table
-                    columns={[
-                      { key: "school", title: "School" },
-                      { key: "resource_type", title: "Request Type" },
-                      { key: "quantity", title: "Quantity" },
-                      { key: "status", title: "Status" },
-                      { key: "requested_by", title: "Requested By", render: (row) => row.requested_by ? row.requested_by.split(' ')[0] + " " + row.requested_by.split(' ')[1].charAt(0) + "." : "N/A" },
-                      { key: "created_at", title: "Requested At", render: (row) => new Date(row.created_at).toLocaleDateString() },
-                      {
-                        key: "actions",
-                        title: "Actions",
-                        render: (row) => {
-                          const isExpanded = expandedRows.includes(row.id);
-                          return (
-                            <div className="flex flex-col items-start">
-                              <button onClick={() => toggleRowExpansion(row.id)} className="flex items-center text-blue-600 hover:text-blue-800">
-                                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                <span className="ml-1">Details</span>
-                              </button>
-                              {isExpanded && (
-                                <div className="mt-2 p-3 bg-gray-50 rounded-md shadow-inner w-full">
-                                  <p className="text-xs text-gray-700 mb-2"><strong>Description:</strong> {row.description}</p>
-                                  {row.status === "PENDING" && (
-                                    <div className="flex gap-2 mt-2">
-                                      <button
-                                        onClick={() => handleResourceAction(row.id, "APPROVED")}
-                                        className="px-3 py-1 text-xs rounded-md bg-green-500 text-white hover:bg-green-600"
-                                      >
-                                        Approve
-                                      </button>
-                                      <button
-                                        onClick={() => handleResourceAction(row.id, "REJECTED")}
-                                        className="px-3 py-1 text-xs rounded-md bg-red-500 text-white hover:bg-red-600"
-                                      >
-                                        Reject
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
+                  <div className="bg-white rounded-xl shadow border border-gray-100 p-4">
+                    {resourcesRows.length === 0 ? (
+                      <div className="text-gray-500">No resource requests found.</div>
+                    ) : (
+                      <div className="space-y-3">
+                        {resourcesRows.map((r) => (
+                          <div key={r.id} className="p-3 border rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div>
+                              <div className="text-sm font-semibold">{r.school || r.school_name || "Unknown School"}</div>
+                              <div className="text-xs text-gray-600">{r.resource_type} • {r.quantity}</div>
+                              <div className="text-xs text-gray-500 mt-1">{r.description}</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`px-2 py-1 text-xs rounded ${r.status === "PENDING" ? "bg-yellow-100 text-yellow-800" : r.status === "APPROVED" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                                {r.status}
+                              </span>
+                              {r.status === "PENDING" && (
+                                <>
+                                  <button onClick={() => handleResourceAction(r.id, "APPROVED")} className="px-3 py-1 text-sm rounded bg-green-500 text-white">Approve</button>
+                                  <button onClick={() => handleResourceAction(r.id, "REJECTED")} className="px-3 py-1 text-sm rounded bg-red-500 text-white">Reject</button>
+                                </>
                               )}
                             </div>
-                          );
-                        },
-                      },
-                    ]}
-                    rows={resourcesRows}
-                  />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </motion.section>
               )}
 
               {activeTab === "ai-analytics" && (
-                <motion.section
-                  key="ai-analytics"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
+                <motion.section key="ai-analytics" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                   <AIAnalytics />
                 </motion.section>
               )}
@@ -514,7 +504,7 @@ export default function CountyDashboard() {
   );
 }
 
-// New SchoolDetailsPopup Component
+// SchoolDetailsPopup Component (keeps your original look)
 const SchoolDetailsPopup = ({ school, onClose }) => {
   if (!school) return null;
 
@@ -533,7 +523,7 @@ const SchoolDetailsPopup = ({ school, onClose }) => {
           <p><strong>Code:</strong> {school.code}</p>
           <p><strong>Subcounty:</strong> {school.subcounty}</p>
           <p><strong>Location:</strong> {school.location || "N/A"}</p>
-          <p><strong>Registered On:</strong> {new Date(school.created_at).toLocaleDateString()}</p>
+          <p><strong>Registered On:</strong> {school.created_at ? new Date(school.created_at).toLocaleDateString() : "N/A"}</p>
           {school.headteacher && (
             <div className="pt-2 border-t mt-2">
               <p className="font-semibold">Headteacher:</p>
@@ -542,23 +532,21 @@ const SchoolDetailsPopup = ({ school, onClose }) => {
               <p><strong>Phone:</strong> {school.headteacher.phone_number}</p>
             </div>
           )}
-          <p className="pt-2 border-t mt-2"><strong>Teachers:</strong> {school.teachers.map(teacher => `${teacher.first_name} ${teacher.last_name}`).join(', ')}</p>
-          <p><strong>Total Students:</strong> {school.total_students}</p>
+          <p className="pt-2 border-t mt-2"><strong>Total Students:</strong> {school.total_students}</p>
         </div>
       </div>
     </div>
   );
 };
 
-// New MapView Component
+// MapView component (renders markers)
 const MapView = ({ schools, handleMarkerClick }) => {
-  const defaultCenter = [-1.286389, 36.817223]; // Default to Nairobi, Kenya
+  const defaultCenter = [-1.286389, 36.817223]; // Nairobi coordinates
 
   const parseLocation = (locationString) => {
     if (!locationString) return null;
     const pointMatch = locationString.match(/POINT \(([^ ]+) ([^ ]+)\)/);
     if (pointMatch && pointMatch.length === 3) {
-      // The database stores longitude first, then latitude in the POINT string
       const longitude = parseFloat(pointMatch[1]);
       const latitude = parseFloat(pointMatch[2]);
       if (!isNaN(latitude) && !isNaN(longitude)) {
@@ -569,27 +557,39 @@ const MapView = ({ schools, handleMarkerClick }) => {
   };
 
   return (
-    <MapContainer center={defaultCenter} zoom={10} scrollWheelZoom={false} className="h-full w-full rounded-2xl shadow-md">
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      {schools.map((school) => {
-        const parsedLocation = parseLocation(school.location);
-        if (parsedLocation) {
+    <div className="rounded-2xl overflow-hidden shadow-md">
+      <MapContainer
+        center={defaultCenter}
+        zoom={11} // ✅ More zoomed-in view of Nairobi County
+        scrollWheelZoom={true}
+        className="h-[600px] w-full"
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {schools.map((school) => {
+          const parsed = parseLocation(school.location);
+          if (!parsed) return null;
           return (
             <Marker
               key={school.code}
-              position={[parsedLocation.latitude, parsedLocation.longitude]}
+              position={[parsed.latitude, parsed.longitude]}
               eventHandlers={{
                 click: () => handleMarkerClick(school.code),
               }}
             >
+              <LeafletPopup>
+                <div className="text-sm">
+                  <div className="font-semibold text-[#2772A0]">{school.name}</div>
+                  <div className="text-xs text-gray-600">Code: {school.code}</div>
+                  <div className="text-xs text-gray-600">Subcounty: {school.subcounty}</div>
+                </div>
+              </LeafletPopup>
             </Marker>
           );
-        }
-        return null;
-      })}
-    </MapContainer>
+        })}
+      </MapContainer>
+    </div>
   );
 };
