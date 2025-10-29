@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import styled, { ThemeProvider, keyframes } from "styled-components";
 import { useAuth } from "../context/AuthContext";
 import { fetchDashboardData } from "../api/dashboard";
+import CustomerSupportFloating from "../components/CustomerSupportFloating";
 
 import {
   Bell,
@@ -409,6 +410,13 @@ const HeadteacherDashboard = () => {
 
         <ChatInterface isOpen={false} onClose={() => {}} />
       </DashboardLayout>
+
+     {/* floating support icon (mailto) */}
+<CustomerSupportFloating
+  supportEmail="educhainkenya@gmail.com"
+  use="mailto"
+/>
+
     </ThemeProvider>
   );
 };

@@ -1,5 +1,6 @@
 // src/dashboard/CountyDashboard.js
 import React, { useEffect, useState, useMemo, useRef } from "react";
+import CustomerSupportFloating from "../components/CustomerSupportFloating";
 import {
   Home,
   Users,
@@ -22,7 +23,6 @@ import axiosInstance from "../api/axiosInstance";
 import CountyOverview from "./CountyOverview";
 import logo from "../assets/logo.png";
 import AIAnalytics from "./AIAnalytics";
-
 import {
   MapContainer,
   TileLayer,
@@ -216,6 +216,7 @@ export default function CountyDashboard() {
   }, [resourcesRows, typeFilter, statusFilter, search]);
 
   const filteredAndSortedSchools = useMemo(() => {
+    // Note: table will display headteacher name and email by checking s.headteacher object
     let list = [...(schoolsRows || [])];
     if (subcountyFilter) list = list.filter((s) => s.subcounty === subcountyFilter);
     if (search.trim()) {
@@ -224,7 +225,9 @@ export default function CountyDashboard() {
         (s) =>
           (s.name || "").toLowerCase().includes(q) ||
           (s.code || "").toLowerCase().includes(q) ||
-          (s.subcounty || "").toLowerCase().includes(q)
+          (s.subcounty || "").toLowerCase().includes(q) ||
+          ((s.headteacher && `${s.headteacher.first_name} ${s.headteacher.last_name}`) || s.headteacher_name || "").toLowerCase().includes(q) ||
+          ((s.headteacher && s.headteacher.email) || s.headteacher_email || "").toLowerCase().includes(q)
       );
     }
     list.sort((a, b) =>
@@ -305,7 +308,7 @@ export default function CountyDashboard() {
         </div>
       </aside>
 
-      {/* Main */}
+      {/* Main Area */}
       <div className="flex-1 md:ml-64">
         <header className="sticky top-0 z-30 backdrop-blur bg-white/80 border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
@@ -366,7 +369,7 @@ export default function CountyDashboard() {
                 </motion.section>
               )}
 
-              {/* SCHOOLS SECTION */}
+              {/* 🏫 SCHOOLS TAB */}
               {activeTab === "schools" && (
                 <motion.section
                   key="schools"
@@ -377,11 +380,11 @@ export default function CountyDashboard() {
                 >
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-semibold text-[#2772A0]">
-                      Schools Overview
+                      Schools Directory
                     </h3>
                     <button
                       onClick={() => setIsMapView(!isMapView)}
-                      className="flex items-center gap-2 text-sm text-[#2772A0] border border-[#2772A0] px-3 py-1 rounded-lg hover:bg-[#2772A0] hover:text-white transition"
+                      className="flex items-center gap-2 bg-[#2772A0] text-white px-3 py-1.5 rounded-lg text-sm font-medium"
                     >
                       <MapPin size={16} />
                       {isMapView ? "List View" : "Map View"}
@@ -390,7 +393,6 @@ export default function CountyDashboard() {
 
                   {!isMapView ? (
                     <>
-                      {/* Filters */}
                       <div className="flex flex-wrap gap-3 mb-4 items-center">
                         <div className="flex items-center gap-2">
                           <label className="text-sm text-gray-600">Subcounty:</label>
@@ -409,64 +411,74 @@ export default function CountyDashboard() {
                         </div>
 
                         <button
-                          onClick={() =>
-                            setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-                          }
+                          onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
                           className="flex items-center gap-1 text-sm text-gray-600 hover:text-[#2772A0]"
                         >
                           <ArrowUpDown size={14} /> Sort by Code ({sortOrder})
                         </button>
                       </div>
 
-                      {/* Table */}
                       <div className="bg-white rounded-xl shadow border border-gray-100 overflow-x-auto">
                         <table className="min-w-full text-sm">
                           <thead className="text-xs bg-gray-50 text-gray-500">
                             <tr>
-                              <th className="py-2 px-4 text-left">Code</th>
                               <th className="py-2 px-4 text-left">Name</th>
+                              <th className="py-2 px-4 text-left">Code</th>
                               <th className="py-2 px-4 text-left">Subcounty</th>
+                              <th className="py-2 px-4 text-left">Headteacher</th>
+                              <th className="py-2 px-4 text-left">Email</th>
                               <th className="py-2 px-4 text-left">Actions</th>
                             </tr>
                           </thead>
                           <tbody>
                             {filteredAndSortedSchools.length === 0 ? (
                               <tr>
-                                <td colSpan={4} className="py-6 text-center text-gray-500">
+                                <td colSpan={6} className="py-6 text-center text-gray-500">
                                   No schools found.
                                 </td>
                               </tr>
                             ) : (
-                              filteredAndSortedSchools.map((s) => (
-                                <tr
-                                  key={s.code}
-                                  className="border-t hover:bg-gray-50 transition"
-                                >
-                                  <td className="py-2 px-4">{s.code}</td>
-                                  <td className="py-2 px-4">{s.name}</td>
-                                  <td className="py-2 px-4">{s.subcounty}</td>
-                                  <td className="py-2 px-4">
-                                    <button
-                                      onClick={() => handleViewDetails(s.code)}
-                                      className="text-[#2772A0] hover:underline text-sm font-semibold"
-                                    >
-                                      View Details
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))
+                              filteredAndSortedSchools.map((s) => {
+                                const headName =
+                                  (s.headteacher && `${s.headteacher.first_name || ""} ${s.headteacher.last_name || ""}`.trim()) ||
+                                  s.headteacher_name ||
+                                  "—";
+                                const headEmail =
+                                  (s.headteacher && (s.headteacher.email || s.headteacher.email_address)) ||
+                                  s.headteacher_email ||
+                                  "—";
+                                return (
+                                  <tr key={s.code || s.id} className="border-t hover:bg-gray-50">
+                                    <td className="py-2 px-4">{s.name}</td>
+                                    <td className="py-2 px-4">{s.code}</td>
+                                    <td className="py-2 px-4">{s.subcounty}</td>
+                                    <td className="py-2 px-4">{headName}</td>
+                                    <td className="py-2 px-4">{headEmail}</td>
+                                    <td className="py-2 px-4">
+                                      <button
+                                        onClick={() => handleViewDetails(s.code)}
+                                        className="px-3 py-1 text-xs rounded-md bg-[#2772A0] text-white hover:bg-[#1f5b80]"
+                                      >
+                                        View
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })
                             )}
                           </tbody>
                         </table>
                       </div>
                     </>
                   ) : (
-                    <MapView schools={filteredAndSortedSchools} handleMarkerClick={handleViewDetails} />
+                    <div className="mt-4">
+                      <MapView schools={filteredAndSortedSchools} handleMarkerClick={handleViewDetails} />
+                    </div>
                   )}
                 </motion.section>
               )}
 
-                            {/* RESOURCES SECTION */}
+              {/* RESOURCES TAB */}
               {activeTab === "resources" && (
                 <motion.section
                   key="resources"
@@ -588,6 +600,7 @@ export default function CountyDashboard() {
                 </motion.section>
               )}
 
+              {/* AI ANALYTICS */}
               {activeTab === "ai-analytics" && (
                 <motion.section
                   key="ai-analytics"
@@ -603,11 +616,16 @@ export default function CountyDashboard() {
           )}
         </main>
       </div>
+            {/* floating support icon (mailto) */}
+      <CustomerSupportFloating
+        supportEmail="educhainkenya@gmail.com"
+        use="mailto"
+      />
     </div>
   );
 }
 
-/* -------------------- POPUP -------------------- */
+/* -------------------- School Details Popup -------------------- */
 const SchoolDetailsPopup = ({ school, onClose }) => {
   if (!school) return null;
   return (
@@ -634,14 +652,14 @@ const SchoolDetailsPopup = ({ school, onClose }) => {
               <p><strong>Phone:</strong> {school.headteacher.phone_number}</p>
             </div>
           )}
-          <p className="pt-2 border-t mt-2"><strong>Total Students:</strong> {school.total_students}</p>
+          <p className="pt-2 border-t mt-2"><strong>Total Students:</strong> {school.total_students ?? "—"}</p>
         </div>
       </div>
     </div>
   );
 };
 
-/* -------------------- MAP VIEW -------------------- */
+/* -------------------- Map View -------------------- */
 const MapView = ({ schools, handleMarkerClick }) => {
   const defaultCenter = [-1.286389, 36.817223];
 
@@ -670,7 +688,7 @@ const MapView = ({ schools, handleMarkerClick }) => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        { (schools || []).map((school) => {
+        {(schools || []).map((school) => {
           const parsed = parseLocation(school.location);
           if (!parsed) return null;
           return (
@@ -695,4 +713,3 @@ const MapView = ({ schools, handleMarkerClick }) => {
     </div>
   );
 };
-
