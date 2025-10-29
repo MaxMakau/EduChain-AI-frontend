@@ -22,7 +22,18 @@ import {
   UserCheck,
 } from "lucide-react";
 
-const CountyOverview = ({ data }) => {
+const parseHeadteacher = (headteacherString) => {
+  if (!headteacherString || typeof headteacherString !== 'string') {
+    return { name: '—', email: '—' };
+  }
+  const nameMatch = headteacherString.match(/^(.*?)\s*\((.*)\)$/);
+  if (nameMatch) {
+    return { name: nameMatch[1], email: nameMatch[2] };
+  }
+  return { name: headteacherString, email: '—' };
+};
+
+const CountyOverview = ({ data, filteredSchools, debouncedSearch, handleViewDetails }) => {
   if (!data || Object.keys(data).length === 0) {
     return (
       <div className="bg-white rounded-2xl p-4 shadow text-center text-gray-500">
@@ -71,138 +82,186 @@ const CountyOverview = ({ data }) => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.6 }}
     >
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5 mt-0">
-        {[
-          { label: "Schools", value: data.schools, icon: School, color: "#2772A0" },
-          { label: "Teachers", value: data.teachers, icon: Users, color: "#4C9ED9" },
-          { label: "Students", value: data.students?.total, icon: ClipboardList, color: "#1E4F73" },
-          {
-            label: "Attendance Rate",
-            value: `${data.attendance?.attendance_percentage || 0}%`,
-            icon: Activity,
-            color: "#A8CDE8",
-          },
-          {
-            label: "Pending Requests",
-            value: data.resource_requests?.pending,
-            icon: Sparkles,
-            color: "#2772A0",
-          },
-        ].map(({ label, value, icon: Icon, color }, i) => (
-          <motion.div
-            key={label}
-            custom={i}
-            variants={fadeUp}
-            initial="hidden"
-            animate="visible"
-            className="bg-white/90 border border-[#CCDDEA] rounded-2xl shadow-md p-4 flex flex-col justify-center items-center hover:shadow-lg hover:scale-[1.03] transition-all duration-300"
-          >
-            <Icon size={26} color={color} className="mb-2" />
-            <p className="text-gray-600 text-sm">{label}</p>
-            <h3 className="text-xl font-bold text-[#1E293B] mt-1">{value}</h3>
-          </motion.div>
-        ))}
-      </div>
+      {debouncedSearch && filteredSchools.length > 0 ? (
+        <div className="bg-white rounded-xl shadow border border-gray-100 overflow-x-auto">
+          <h3 className="text-lg font-semibold text-[#2772A0] mb-4 p-4">Search Results for "{debouncedSearch}"</h3>
+          <table className="min-w-full text-sm">
+            <thead className="text-xs bg-gray-50 text-gray-500">
+              <tr>
+                <th className="py-2 px-4 text-left">Name</th>
+                <th className="py-2 px-4 text-left">Code</th>
+                <th className="py-2 px-4 text-left">Subcounty</th>
+                <th className="py-2 px-4 text-left">Headteacher</th>
+                <th className="py-2 px-4 text-left">Email</th>
+                <th className="py-2 px-4 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSchools.map((s) => {
+                const headteacherInfo = parseHeadteacher(s.headteacher);
+                const headName = headteacherInfo.name;
+                const headEmail = headteacherInfo.email;
+                return (
+                  <tr key={s.code || s.id} className="border-t hover:bg-gray-50">
+                    <td className="py-2 px-4">{s.name}</td>
+                    <td className="py-2 px-4">{s.code}</td>
+                    <td className="py-2 px-4">{s.subcounty}</td>
+                    <td className="py-2 px-4">{headName}</td>
+                    <td className="py-2 px-4">{headEmail}</td>
+                    <td className="py-2 px-4">
+                      <button
+                        onClick={() => handleViewDetails(s.code)}
+                        className="px-3 py-1 text-xs rounded-md bg-[#2772A0] text-white hover:bg-[#1f5b80]"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : debouncedSearch && filteredSchools.length === 0 ? (
+        <div className="bg-white rounded-2xl p-4 shadow text-center text-gray-500">
+          No schools found matching "{debouncedSearch}".
+        </div>
+      ) : (
+        <>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5 mt-0">
+            {[
+              { label: "Schools", value: data.schools, icon: School, color: "#2772A0" },
+              { label: "Teachers", value: data.teachers, icon: Users, color: "#4C9ED9" },
+              { label: "Students", value: data.students?.total, icon: ClipboardList, color: "#1E4F73" },
+              {
+                label: "Attendance Rate",
+                value: `${data.attendance?.attendance_percentage || 0}%`,
+                icon: Activity,
+                color: "#A8CDE8",
+              },
+              {
+                label: "Pending Requests",
+                value: data.resource_requests?.pending,
+                icon: Sparkles,
+                color: "#2772A0",
+              },
+            ].map(({ label, value, icon: Icon, color }, i) => (
+              <motion.div
+                key={label}
+                custom={i}
+                variants={fadeUp}
+                initial="hidden"
+                animate="visible"
+                className="bg-white/90 border border-[#CCDDEA] rounded-2xl shadow-md p-4 flex flex-col justify-center items-center hover:shadow-lg hover:scale-[1.03] transition-all duration-300"
+              >
+                <Icon size={26} color={color} className="mb-2" />
+                <p className="text-gray-600 text-sm">{label}</p>
+                <h3 className="text-xl font-bold text-[#1E293B] mt-1">{value}</h3>
+              </motion.div>
+            ))}
+          </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-4">
-        {/* Gender Distribution */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow p-4 flex flex-col"
-        >
-          <h3 className="text-base font-semibold text-[#2772A0] mb-2 flex items-center gap-2">
-            <PieIcon size={16} className="text-[#2772A0]" /> Gender Distribution
-          </h3>
-          <div className="flex justify-around items-center mb-2 text-sm font-medium text-gray-500">
-            <div className="flex items-center gap-1">
-              <User color="#2772A0" size={16} /> Boys
-            </div>
-            <div className="flex items-center gap-1">
-              <UserCheck color="#4C9ED9" size={16} /> Girls
-            </div>
-          </div>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={genderData} barSize={32}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="name" stroke="#6B7280" />
-                <YAxis stroke="#6B7280" allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#2772A0" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-4">
+            {/* Gender Distribution */}
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow p-4 flex flex-col"
+            >
+              <h3 className="text-base font-semibold text-[#2772A0] mb-2 flex items-center gap-2">
+                <PieIcon size={16} className="text-[#2772A0]" /> Gender Distribution
+              </h3>
+              <div className="flex justify-around items-center mb-2 text-sm font-medium text-gray-500">
+                <div className="flex items-center gap-1">
+                  <User color="#2772A0" size={16} /> Boys
+                </div>
+                <div className="flex items-center gap-1">
+                  <UserCheck color="#4C9ED9" size={16} /> Girls
+                </div>
+              </div>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={genderData} barSize={32}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <XAxis dataKey="name" stroke="#6B7280" />
+                    <YAxis stroke="#6B7280" allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="#2772A0" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
 
-        {/* Disability Distribution */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow p-4 flex flex-col"
-        >
-          <h3 className="text-base font-semibold text-[#2772A0] mb-2 flex items-center gap-2">
-            <ClipboardList size={16} className="text-[#2772A0]" /> Disability Distribution
-          </h3>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={disabilityData} barSize={28}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="name" stroke="#6B7280" />
-                <YAxis stroke="#6B7280" allowDecimals={false} />
-                <Tooltip />
-                <Bar dataKey="value" fill="url(#colorDisability)" radius={[6, 6, 0, 0]} />
-                <defs>
-                  <linearGradient id="colorDisability" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2772A0" stopOpacity={0.9} />
-                    <stop offset="95%" stopColor="#A8CDE8" stopOpacity={0.7} />
-                  </linearGradient>
-                </defs>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
+            {/* Disability Distribution */}
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow p-4 flex flex-col"
+            >
+              <h3 className="text-base font-semibold text-[#2772A0] mb-2 flex items-center gap-2">
+                <ClipboardList size={16} className="text-[#2772A0]" /> Disability Distribution
+              </h3>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={disabilityData} barSize={28}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <XAxis dataKey="name" stroke="#6B7280" />
+                    <YAxis stroke="#6B7280" allowDecimals={false} />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="url(#colorDisability)" radius={[6, 6, 0, 0]} />
+                    <defs>
+                      <linearGradient id="colorDisability" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#2772A0" stopOpacity={0.9} />
+                        <stop offset="95%" stopColor="#A8CDE8" stopOpacity={0.7} />
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
 
-        {/* Schools per Subcounty */}
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          animate="visible"
-          className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow p-4 flex flex-col"
-        >
-          <h3 className="text-base font-semibold text-[#2772A0] mb-2 flex items-center gap-2">
-            <BarChart2 size={16} className="text-[#2772A0]" /> Schools per Subcounty
-          </h3>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={subcountyData} barSize={26}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis dataKey="name" stroke="#6B7280" />
-                <YAxis stroke="#6B7280" allowDecimals={false} />
-                <Tooltip
-                  cursor={{ fill: "#CCDDEA50" }}
-                  contentStyle={{
-                    backgroundColor: "#fff",
-                    borderRadius: "10px",
-                    border: "1px solid #CCDDEA",
-                  }}
-                />
-                <defs>
-                  <linearGradient id="colorSchools" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2772A0" stopOpacity={0.95} />
-                    <stop offset="95%" stopColor="#4C9ED9" stopOpacity={0.75} />
-                  </linearGradient>
-                </defs>
-                <Bar dataKey="schools" fill="url(#colorSchools)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {/* Schools per Subcounty */}
+            <motion.div
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              className="bg-white/95 border border-[#CCDDEA] rounded-2xl shadow p-4 flex flex-col"
+            >
+              <h3 className="text-base font-semibold text-[#2772A0] mb-2 flex items-center gap-2">
+                <BarChart2 size={16} className="text-[#2772A0]" /> Schools per Subcounty
+              </h3>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={subcountyData} barSize={26}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <XAxis dataKey="name" stroke="#6B7280" />
+                    <YAxis stroke="#6B7280" allowDecimals={false} />
+                    <Tooltip
+                      cursor={{ fill: "#CCDDEA50" }}
+                      contentStyle={{
+                        backgroundColor: "#fff",
+                        borderRadius: "10px",
+                        border: "1px solid #CCDDEA",
+                      }}
+                    />
+                    <defs>
+                      <linearGradient id="colorSchools" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#2772A0" stopOpacity={0.95} />
+                        <stop offset="95%" stopColor="#4C9ED9" stopOpacity={0.75} />
+                      </linearGradient>
+                    </defs>
+                    <Bar dataKey="schools" fill="url(#colorSchools)" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </motion.div>
           </div>
-        </motion.div>
-      </div>
+        </>
+      )}
     </motion.section>
   );
 };

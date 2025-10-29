@@ -39,6 +39,17 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
 });
 
+const parseHeadteacher = (headteacherString) => {
+  if (!headteacherString || typeof headteacherString !== 'string') {
+    return { name: '—', email: '—' };
+  }
+  const nameMatch = headteacherString.match(/^(.*?)\s*\((.*)\)$/);
+  if (nameMatch) {
+    return { name: nameMatch[1], email: nameMatch[2] };
+  }
+  return { name: headteacherString, email: '—' };
+};
+
 const tabs = [
   { id: "overview", label: "Overview", icon: Home },
   { id: "schools", label: "Schools", icon: School },
@@ -74,6 +85,7 @@ export default function CountyDashboard() {
   const [subcountyFilter, setSubcountyFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -90,13 +102,27 @@ export default function CountyDashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isSidebarOpen]);
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500); // 500ms debounce time
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [search]);
+
   const fetchTabData = async (tab) => {
     setLoading(true);
     setError("");
     const endpoint = endpoints[tab];
     if (!endpoint) return;
     try {
-      const res = await axiosInstance.get(endpoint, {
+      let url = endpoint;
+      if ((tab === "schools" || tab === "resources" || tab === "overview") && debouncedSearch.trim()) {
+        url = `${endpoint}?search=${encodeURIComponent(debouncedSearch.trim())}`;
+      }
+      const res = await axiosInstance.get(url, {
         headers: { Authorization: token ? `Bearer ${token}` : undefined },
       });
       setData((prev) => ({ ...prev, [tab]: res.data }));
@@ -130,7 +156,7 @@ export default function CountyDashboard() {
       return;
     }
     fetchTabData(activeTab);
-  }, [activeTab, location.pathname]);
+  }, [activeTab, location.pathname, debouncedSearch]);
 
   const schoolsRows = data.schools?.results || data.schools || [];
   const resourcesRows = data.resources?.results || data.resources || [];
@@ -365,7 +391,7 @@ export default function CountyDashboard() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <CountyOverview data={data.overview ?? {}} />
+                  <CountyOverview data={data.overview ?? {}} filteredSchools={filteredAndSortedSchools} debouncedSearch={debouncedSearch} handleViewDetails={handleViewDetails} />
                 </motion.section>
               )}
 
@@ -422,11 +448,13 @@ export default function CountyDashboard() {
                         <table className="min-w-full text-sm">
                           <thead className="text-xs bg-gray-50 text-gray-500">
                             <tr>
-                              <th className="py-2 px-4 text-left">Name</th>
                               <th className="py-2 px-4 text-left">Code</th>
+                              <th className="py-2 px-4 text-left">Name</th>
                               <th className="py-2 px-4 text-left">Subcounty</th>
                               <th className="py-2 px-4 text-left">Headteacher</th>
-                              <th className="py-2 px-4 text-left">Email</th>
+                              <th className="py-2 px-4 text-left">Teachers</th>
+                              <th className="py-2 px-4 text-left">Students</th>
+                              <th className="py-2 px-4 text-left">Avg. Assessment</th>
                               <th className="py-2 px-4 text-left">Actions</th>
                             </tr>
                           </thead>
@@ -439,21 +467,17 @@ export default function CountyDashboard() {
                               </tr>
                             ) : (
                               filteredAndSortedSchools.map((s) => {
-                                const headName =
-                                  (s.headteacher && `${s.headteacher.first_name || ""} ${s.headteacher.last_name || ""}`.trim()) ||
-                                  s.headteacher_name ||
-                                  "—";
-                                const headEmail =
-                                  (s.headteacher && (s.headteacher.email || s.headteacher.email_address)) ||
-                                  s.headteacher_email ||
-                                  "—";
+                                const headteacherInfo = parseHeadteacher(s.headteacher);
+                                const headName = headteacherInfo.name;
                                 return (
                                   <tr key={s.code || s.id} className="border-t hover:bg-gray-50">
-                                    <td className="py-2 px-4">{s.name}</td>
                                     <td className="py-2 px-4">{s.code}</td>
+                                    <td className="py-2 px-4">{s.name}</td>
                                     <td className="py-2 px-4">{s.subcounty}</td>
                                     <td className="py-2 px-4">{headName}</td>
-                                    <td className="py-2 px-4">{headEmail}</td>
+                                    <td className="py-2 px-4">{s.total_teachers ?? "—"}</td>
+                                    <td className="py-2 px-4">{s.total_students ?? "—"}</td>
+                                    <td className="py-2 px-4">{s.assessment_average ?? "—"}</td>
                                     <td className="py-2 px-4">
                                       <button
                                         onClick={() => handleViewDetails(s.code)}
